@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\Boat;
 use App\Models\PassengerManifest;
+use App\Models\RegisteredPassenger;
+use App\Models\Ridership;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -13,8 +14,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Get the total number of users
-        $totalUsers = User::count();
+        $totalRegisteredPassenger = RegisteredPassenger::count();
 
         // Get all boats and count operational boats
         $boats = Boat::all();
@@ -27,13 +27,13 @@ class DashboardController extends Controller
         $startOfMonth = Carbon::now()->startOfMonth();
 
         // Calculate Daily Passengers
-        $dailyPassengers = PassengerManifest::whereDate('created_at', $today)->count();
+        $dailyPassengers = Ridership::whereDate('created_at', $today)->count();
 
         // Get monthly ridership data and calculate month-to-date passengers for male and female
         $year = Carbon::now()->year;
         $month = Carbon::now()->month;
 
-        $monthlyData = PassengerManifest::select(
+        $monthlyData = Ridership::select(
             DB::raw("DATE(created_at) as date"),
             DB::raw('count(*) as total'),
             DB::raw('sum(case when gender = \'Male\' then 1 else 0 end) as male_count'),
@@ -68,15 +68,9 @@ class DashboardController extends Controller
             ];
         }
 
-        $totalMonthlyPassengers = PassengerManifest::whereYear('created_at', $year)
+        $totalMonthlyPassengers = Ridership::whereYear('created_at', $year)
             ->whereMonth('created_at', $month)
             ->count();
-
-        // Calculate how many days have passed in the current month
-        $daysPassed = Carbon::now()->day;
-
-        // Calculate the average daily passengers
-        $averageDailyPassengers = $daysPassed > 0 ? $totalMonthlyPassengers / $daysPassed : 0;
 
         $stationLabels = [
             'Pinagbuhatan', 'Kalawaan', 'San Joaquin', 'Guadalupe', 'Hulo', 
@@ -84,12 +78,11 @@ class DashboardController extends Controller
             'Lawton', 'Escolta'
         ];
 
-        $stationRidershipData = PassengerManifest::select('origin', DB::raw('count(*) as passenger_count'))
+        $stationRidershipData = Ridership::select('origin', DB::raw('count(*) as passenger_count'))
             ->whereDate('created_at', $today)
             ->groupBy('origin')
             ->get()
             ->keyBy('origin');  // Key the data by the station names
-
 
         $stationPassengerCounts = [];
         foreach ($stationLabels as $station) {
@@ -99,7 +92,7 @@ class DashboardController extends Controller
         }
 
         // Count professions (Student vs Senior) within the current month
-        $professionData = PassengerManifest::select(
+        $professionData = Ridership::select(
             DB::raw('profession'),
             DB::raw('count(*) as total')
         )
@@ -112,20 +105,33 @@ class DashboardController extends Controller
 
         $studentsCount = $professionData->has('Student') ? $professionData->get('Student')->total : 0;
         $seniorsCount = $professionData->has('Senior') ? $professionData->get('Senior')->total : 0;
+        $othersCount = $totalMonthlyPassengers - ($studentsCount + $seniorsCount);
+
+        // Count of registered and guest passengers
+        $guestPassengersCount = Ridership::whereRaw('is_guest = true')
+            ->whereDate('created_at', Carbon::today())
+            ->count();
+
+        $registeredPassengersCount = Ridership::whereRaw('is_guest = false')
+            ->whereDate('created_at', Carbon::today())
+            ->count();
+
 
         return view('dashboard', compact(
-            'totalUsers',
             'boats',
             'operationalBoats',
             'dailyPassengers',
             'monthToDatePassengers',
             'monthToDateMale',
             'monthToDateFemale',
-            'averageDailyPassengers',
             'stationLabels',
             'stationPassengerCounts',
             'studentsCount',
-            'seniorsCount'
+            'seniorsCount',
+            'othersCount',
+            'totalRegisteredPassenger',
+            'guestPassengersCount',  // Pass guest count to view
+            'registeredPassengersCount'  // Pass registered count to view
         ));
     }
 }

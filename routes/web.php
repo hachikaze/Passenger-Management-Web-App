@@ -7,7 +7,6 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FerryAideController;
 use App\Http\Controllers\FerryAideLocationController;
 use App\Http\Controllers\ForgotPasswordController;
-use App\Http\Controllers\MapController;
 use App\Http\Controllers\RegisteredUserController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SessionController;
@@ -34,7 +33,9 @@ Route::middleware('auth', 'verified')->group(function() {
     Route::delete('/boats/{boat}', [BoatController::class, 'deleteBoat'])->name('delete-boat');
 
     // FOR MAP
-    Route::get('/map', [MapController::class, 'index']);
+    Route::get('/map', [FerryAideLocationController::class, 'index']);
+    Route::get('/api/ferry-aide/locations', [FerryAideLocationController::class, 'getFerryAideLocations'])->name('ferry-aide.locations');
+    Route::get('/ferry-aide/assigned-station', [FerryAideLocationController::class, 'getAssignedStation'])->name('ferry-aide.assigned-station');
 
     // FOR SETTINGS
     Route::get('/settings', function() {
@@ -94,4 +95,5 @@ Route::post('/email/verification-notification', function (Request $request) {
     return back()->with('success', 'Verification link sent!');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
 
-Route::get('/api/ferry-aide/locations', [FerryAideLocationController::class, 'getFerryAideLocations'])->name('ferry-aide.locations');
+Route::post('/reports/download/dailypdf', [ReportsController::class, 'dailyReportPDF'])->name('download.dailyreport');
+Route::post('/reports/download/monthlypdf', [ReportsController::class, 'monthlyReportPDF'])->name('download.monthlyreport');

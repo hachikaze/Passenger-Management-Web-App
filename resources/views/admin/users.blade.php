@@ -11,8 +11,8 @@
         @endif
     </x-slot:alert>
 
-    <div class="my-8 mx-10 p-3 bg-gray-200 shadow-lg rounded">
-        <h1 class="text-2xl font-bold pb-4">Manage Users</h1>
+    <div class="my-8 mx-5 p-3 bg-gray-200 shadow-lg rounded">
+        <h1 class="text-xl font-bold pb-4">Manage Users</h1>
 
         <div class="mb-4 p-4 bg-white rounded-lg shadow-lg mt-4">
             <table class="min-w-full table-auto divide-y divide-gray-200">
@@ -79,7 +79,7 @@
                             @else
                                 <span class="text-red-500">Offline</span>
                             @endif
-                        </td>
+                        </td>   
 
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <!-- Edit Button -->
@@ -106,18 +106,18 @@
             </div>
         </div>
 
-        <a href="{{ route('register') }}" class="px-4 py-2 bg-blue-500 text-white rounded">Add User</a>
+        <a href="{{ route('register') }}" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 transition duration-300 text-sm text-white rounded">Add User</a>
         
     </div>
 
-    <div class="my-8 mx-10 p-3 bg-gray-200 shadow-lg rounded">
-        <h1 class="text-2xl font-bold pb-4">User Activity Log</h1>
+    <div class="my-8 mx-5 p-3 bg-gray-200 shadow-lg rounded">
+        <h1 class="text-xl font-bold pb-4">User Activity Log</h1>
 
         <!-- Date Filter Form -->
         <form method="GET" action="{{ route('users.index') }}" class="mb-4">
             <label for="date" class="text-gray-700">Filter by Date:</label>
             <input type="date" id="date" name="date" value="{{ $filterDate }}" class="ml-2 p-2 border rounded">
-            <button type="submit" class="ml-2 px-4 py-2 bg-blue-500 text-white rounded">Filter</button>
+            <button type="submit" class="ml-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 transition duration-300 text-sm text-white rounded">Filter</button>
         </form>
 
         <div class="mb-4 p-4 bg-white rounded-lg shadow-lg mt-4">

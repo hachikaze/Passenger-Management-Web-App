@@ -3,7 +3,6 @@
         Map
     </x-slot:heading>
 
-    <h1>This is the Map page.</h1>
     <x-slot:alert>
         @if (session('success'))
             <x-alert-bottom-success>
@@ -12,110 +11,192 @@
         @endif
     </x-slot:alert>
 
-    <div id="map" style="height: 500px;"></div>
-<button id="resetMapButton" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-  Reset to Marker
-</button>
+    <div class="mt-6 container mx-auto bg-gray-100 p-3">
+        <!-- Styled Container for the Map and Buttons -->
+        <div class="flex flex-col lg:flex-row gap-4">
+            <!-- Map Container -->
+            <div id="map" class="w-full lg:w-3/4 h-96 border-2 border-blue-300 rounded-lg shadow-md" style="height: 500px;"></div>
+            
+            <!-- Buttons Container -->
+            <div id="buttonsContainer" class="w-full lg:w-1/4 p-4 bg-white border-2 border-gray-200 rounded-lg shadow-md mt-4 lg:mt-0 overflow-y-auto" style="max-height: 500px;">
+                <!-- Buttons will be dynamically added here -->
+                <h3 class="text-lg font-semibold mb-2 text-gray-700">Ferry Aide Navigation</h3>
+            </div>
+        </div>
+        <p class="mt-3 text-lg font-medium">Current Station: {{ $station }}</p>
+    </div>
 
-<script>
-  let map;
-  let markers = {}; // Store markers by ferry_aide_id
-  let defaultMarkerPosition = null; // To store the initial/default marker position
-  let isMarkerSet = false; // Flag to check if the default marker has been set
+    <script>
+        let map;
+        let markers = {}; // Store markers by ferry_aide_id
+        let defaultMarkerPosition = null; // To store the initial/default marker position
+        let isMarkerSet = false; // Flag to check if the default marker has been set
 
-  function initMap() {
-      // Default center coordinates (you can change this to fit the area)
-      var defaultCenter = { lat: 14.56241840, lng: 121.08076320 };
+        function initMap() {
+            // Fetch the assigned station from the backend
+            fetch("{{ route('ferry-aide.assigned-station') }}")
+                .then(response => response.json())
+                .then(data => {
+                    // Check if the station data is available
+                    if (data.lat && data.lng) {
+                        var defaultCenter = { lat: data.lat, lng: data.lng };
+                        console.log('Assigned station coordinates:', defaultCenter);
+                    } else {
+                        // Fallback to a default location if the station is not found
+                        var defaultCenter = { lat: 14.5680014, lng: 121.0479274 }; // Guadalupe as default
+                        console.warn('Assigned station not found. Using default center.');
+                    }
 
-      map = new google.maps.Map(document.getElementById('map'), {
-          zoom: 15,
-          center: defaultCenter,
-      });
-
-      // Fetch initial data and start polling
-      fetchAndDisplayMarkers();
-      setInterval(fetchAndDisplayMarkers, 10000); // Update every 10 seconds
-  }
-
-  function fetchAndDisplayMarkers() {
-      console.log('Fetching ferry aide locations...'); // Log that fetch has started
-
-      fetch('{{ route('ferry-aide.locations') }}') // Use the named route defined in web.php
-          .then(response => {
-              console.log('Response received:', response); // Log the entire response
-              return response.json(); // Convert response to JSON
-          })
-          .then(data => {
-                console.log('Fetched data:', data); // Log the data received
-
-                if (data.length > 0) {
-                    data.forEach((location, index) => {
-                        const ferryAideId = location.ferry_aide_id;
-                        const position = { 
-                            lat: parseFloat(location.latitude), // Ensure lat is a float
-                            lng: parseFloat(location.longitude)  // Ensure lng is a float
-                        };
-
-                        // If this is the first marker, set it as the default marker position
-                        if (!isMarkerSet && index === 0) {
-                            defaultMarkerPosition = position;
-                            isMarkerSet = true; // Mark that the default marker has been set
-                            console.log('Default marker set at:', defaultMarkerPosition); // Log default marker position
-                        }
-
-                        // Check if marker already exists for the ferry aide
-                        if (markers[ferryAideId]) {
-                            // Update marker position
-                            markers[ferryAideId].setPosition(position);
-                            console.log(`Marker updated for Ferry Aide ID: ${ferryAideId} at position`, position);
-                        } else {
-                            // Create new marker for this ferry aide
-                            const marker = new google.maps.Marker({
-                                position: position,
-                                map: map,
-                                icon: {
-                                    url: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', // Custom icon
-                                    scaledSize: new google.maps.Size(40, 40) // Resize icon
-                                }
-                            });
-
-                            // Store the marker in the markers object
-                            markers[ferryAideId] = marker;
-                            console.log(`New marker created for Ferry Aide ID: ${ferryAideId} at position`, position);
-                        }
+                    // Initialize the map with the center based on assigned station or default
+                    map = new google.maps.Map(document.getElementById('map'), {
+                        zoom: 20,
+                        center: defaultCenter,
                     });
-                } else {
-                    console.warn('No locations available'); // Log if no data is returned
+
+                    fetchAndDisplayMarkers();
+                    setInterval(fetchAndDisplayMarkers, 10000); // Update markers every 10 seconds
+                })
+                .catch(error => {
+                    console.error('Error fetching assigned station:', error);
+                    // Fallback to default location in case of error
+                    map = new google.maps.Map(document.getElementById('map'), {
+                        zoom: 20,
+                        center: { lat: 14.5680014, lng: 121.0479274 } // Default to Guadalupe
+                    });
+                    fetchAndDisplayMarkers();
+                });
+        }
+
+        // Define an array of colors for the boat markers (already in your code)
+        const boatColors = [
+        '#cc0000', // Red
+        '#009900', // Green
+        '#0000cc', // Blue
+        '#cccc00', // Yellow
+        '#cc00cc', // Magenta
+        '#ff9900', // Orange
+        '#00cccc', // Cyan
+        '#9900ff', // Purple
+        '#ffff99', // Light Yellow
+        '#ff6699'  // Pink
+        ];
+
+        // Fetch and display markers function (only relevant parts shown)
+        function fetchAndDisplayMarkers() {
+            console.log('Fetching ferry aide locations...');
+
+            fetch("{{ route('ferry-aide.locations') }}")
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Fetched data:', data);
+
+                    if (data.length > 0) {
+                        let newFerryAideIds = [];
+                        data.forEach((location, index) => {
+                            const ferryAideId = location.ferry_aide_id;
+                            const position = { 
+                                lat: parseFloat(location.latitude), 
+                                lng: parseFloat(location.longitude)
+                            };
+                            const boatName = location.boat_name; // Retrieve boat name from data
+
+                            // Determine the color for the current boat using the index and boatColors array
+                            const boatColor = boatColors[index % boatColors.length]; // Cycle through the colors
+
+                            // Create the marker icon as usual (already in your code)
+                            const iconSvg = `data:image/svg+xml;utf-8, \
+                                %3Csvg xmlns=%22http://www.w3.org/2000/svg%22 height=%2224px%22 viewBox=%220%20-960%20960%20960%22 width=%2224px%22 fill=%22${encodeURIComponent(boatColor)}%22%3E%3Cpath d=%22M479-418ZM158-200 82-468q-3-12 2.5-28t23.5-22l52-18v-184q0-33 23.5-56.5T240-800h120v-120h240v120h120q33 0 56.5 23.5T800-720v184l52 18q21 8 25 23.5t1 26.5l-76 268q-50 0-91-23.5T640-280q-30 33-71 56.5T480-200q-48 0-89-23.5T320-280q-30 33-71 56.5T158-200ZM80-40v-80h80q42 0 83-13t77-39q36 26 77 38t83 12q42 0 83-12t77-38q36 26 77 39t83 13h80v80h-80q-42 0-82-10t-78-30q-38 20-78.5 30T480-40q-41 0-81.5-10T320-80q-38 20-78 30t-82 10H80Zm160-522 240-78 240 78v-158H240v158Zm240 282q47 0 79.5-33t80.5-89q48 54 65 74t41 34l44-160-310-102-312 102 46 158q24-14 41-32t65-74q50 57 81.5 89.5T480-280Z%22/%3E%3C/svg%3E`;
+
+                            // Check if marker already exists for this ferry aide
+                            if (markers[ferryAideId]) {
+                                // Update existing marker position and color
+                                markers[ferryAideId].setPosition(position);
+                                markers[ferryAideId].setIcon({
+                                    url: iconSvg,
+                                    scaledSize: new google.maps.Size(50, 50)
+                                });
+                                console.log(`Marker updated for ${boatName} at position`, position);
+                            } else {
+                                // Create a new marker with the dynamic SVG icon
+                                const marker = new google.maps.Marker({
+                                    position: position,
+                                    map: map,
+                                    icon: {
+                                        url: iconSvg,
+                                        scaledSize: new google.maps.Size(50, 50)
+                                    }
+                                });
+
+                                markers[ferryAideId] = marker;
+                                console.log(`New marker created for ${boatName} at position`, position);
+
+                                // Create a new button with the boat color
+                                createButton(ferryAideId, boatName, boatColor); // Pass boatColor to createButton
+                            }
+
+                            newFerryAideIds.push(ferryAideId);
+                        });
+
+                        // Remove buttons and markers for ferry aides no longer in the data
+                        Object.keys(markers).forEach(existingFerryAideId => {
+                            if (!newFerryAideIds.includes(parseInt(existingFerryAideId))) {
+                                markers[existingFerryAideId].setMap(null); // Remove marker from map
+                                delete markers[existingFerryAideId]; // Remove from markers object
+                                removeButton(existingFerryAideId); // Remove the button
+                                console.log(`Removed marker and button for Ferry Aide ID: ${existingFerryAideId}`);
+                            }
+                        });
+                    } else {
+                        console.warn('No locations available');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                });
+        }
+
+        function createButton(ferryAideId, boatName, boatColor) {
+            const button = document.createElement('button');
+            button.innerText = `${boatName}`; // Use the boat name here
+
+            // Apply TailwindCSS classes and set dynamic background color from boatColor
+            button.className = `text-white text-xs font-bold py-2 px-4 rounded m-2`; // Tailwind classes
+            button.style.backgroundColor = boatColor; // Use the color from boatColors array
+
+            // Add click event listener
+            button.addEventListener('click', () => {
+                const marker = markers[ferryAideId];
+                if (marker) {
+                    map.setCenter(marker.getPosition());
+                    map.setZoom(17); // Zoom in to focus on the marker
+                    console.log(`Map centered on ${boatName}`);
                 }
-            })
-          .catch(error => {
-              console.error('Error fetching data:', error); // Log any errors that occur during the fetch
-          });
-  }
+            });
 
-  // Event listener for the reset button
-  document.getElementById('resetMapButton').addEventListener('click', function() {
-      if (isMarkerSet && defaultMarkerPosition) {
-          // Reset the map to the default marker position and zoom level
-          map.setCenter(defaultMarkerPosition);
-          map.setZoom(15); // Adjust zoom as needed
-          console.log('Map reset to default marker position:', defaultMarkerPosition); // Log when map is reset
-      } else {
-          alert('No default marker position set yet!');
-          console.warn('Attempted to reset map but no default marker is set.');
-      }
-  });
+            // Append the button to the container
+            document.getElementById('buttonsContainer').appendChild(button);
+        }
 
-  // Load the Google Maps script asynchronously
-  function loadScript(url) {
-      var script = document.createElement("script");
-      script.type = "text/javascript";
-      script.src = url;
-      document.body.appendChild(script);
-  }
+        // Remove a button for a specific ferry aide
+        function removeButton(ferryAideId) {
+            const buttonContainer = document.getElementById('buttonsContainer');
+            Array.from(buttonContainer.children).forEach(button => {
+                if (button.innerText.includes(`Ferry Aide ${ferryAideId}`)) {
+                    buttonContainer.removeChild(button);
+                }
+            });
+        }
 
-  // Add your Google Maps API Key here
-  loadScript('https://maps.googleapis.com/maps/api/js?key=AIzaSyDa8BUEO6XgsEKaaougduKoBBKL-7x1LBQ&callback=initMap');
-</script>
+        // Load the Google Maps script
+        function loadScript(url) {
+            var script = document.createElement("script");
+            script.type = "text/javascript";
+            script.src = url;
+            document.body.appendChild(script);
+        }
+
+        // Add your Google Maps API Key here
+        loadScript('https://maps.googleapis.com/maps/api/js?key=AIzaSyDa8BUEO6XgsEKaaougduKoBBKL-7x1LBQ&callback=initMap');
+    </script>
 
 </x-sidebar-layout>

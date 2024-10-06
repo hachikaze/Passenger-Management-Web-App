@@ -17,8 +17,8 @@
         @endif
     </x-slot:alert>
 
-    <div class="my-8 mx-10 p-3 bg-gray-200 shadow-lg rounded">
-        <h1 class="text-2xl font-bold pb-4">Operational Boat Status</h1>
+    <div class="my-4 mx-40 p-3 bg-gray-200 shadow-lg rounded">
+        <h1 class="text-xl font-bold pb-4">Operational Boat Status</h1>
         <div class="p-4 bg-white rounded-lg shadow-lg">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -27,16 +27,16 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Boat Name</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                        <th class="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @foreach($boats as $boat)
                         <tr class="hover:bg-gray-100">
-                            <td class="px-6 py-4 text-sm text-gray-900">{{ $loop->iteration }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-900">{{ $boat->boat_name }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-900">{{ $boat->max_capacity }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-900">
+                            <td class="px-6 py-4 text-xs text-gray-900">{{ $loop->iteration }}</td>
+                            <td class="px-6 py-4 text-xs text-gray-900">{{ $boat->boat_name }}</td>
+                            <td class="px-6 py-4 text-xs text-gray-900">{{ $boat->max_capacity }}</td>
+                            <td class="px-6 py-4 text-xs text-gray-900">
                                 <form action="{{ route('update-status') }}" method="POST" class="inline-block" id="updateStatusForm-{{ $boat->id }}">
                                     @csrf
                                     @method('PATCH')
@@ -50,12 +50,12 @@
                                 </form>
                             </td>
                             <td class="py-4 text-sm text-gray-900">
-                                <button class="p-2 bg-white rounded-md hover:bg-pink-500 transition duration-300 edit-button" onclick="toggleEdit(this, '{{ $boat->id }}')">Edit</button>
-                                <button class="p-2 bg-gray-500 rounded-md text-white cancel-button" onclick="cancelEdit(this, '{{ $boat->id }}')" style="display: none;">Cancel</button>
+                                <button class="px-2 py-1 bg-white rounded-md hover:bg-gray-300 transition duration-300 edit-button" onclick="toggleEdit(this, '{{ $boat->id }}')">Edit</button>
+                                <button class="px-2 py-1 bg-gray-500 rounded-md text-white cancel-button" onclick="cancelEdit(this, '{{ $boat->id }}')" style="display: none;">Cancel</button>
                                 <form id="deleteForm-{{ $boat->id }}" action="{{ route('delete-boat', $boat->id) }}" method="POST" class="inline-block delete-form" style="display: none;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="button" class="p-2 bg-red-500 rounded-md text-white delete-button" onclick="showDeleteConfirmation('{{ $boat->id }}')">Delete</button>
+                                    <button type="button" class="px-2 py-1 bg-red-500 rounded-md text-white delete-button" onclick="showDeleteConfirmation('{{ $boat->id }}')">Delete</button>
                                 </form>
                             </td>
                         </tr>
@@ -67,22 +67,22 @@
                             <td colspan="6" class="px-6 py-4"></td>
                         </tr>
                         <tr id="addBoatRow" style="display: none;">
-                            <td class="px-6 py-4 text-sm text-gray-900">#</td>
-                            <td class="px-6 py-4 text-sm text-gray-900">
+                            <td class="px-6 py-3 text-xs text-gray-900">#</td>
+                            <td class="px-6 py-3 text-xs text-gray-900">
                                 <input type="text" class="form-control" name="boat_name" placeholder="Boat Name">
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900">
+                            <td class="px-6 py-3 text-xs text-gray-900">
                                 <input type="number" class="form-control w-24" name="max_capacity" placeholder="Max Cap.">
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900">
+                            <td class="px-6 py-3 text-xs text-gray-900">
                                 <select name="status" class="form-select w-32">
                                     <option value="ACTIVE">ACTIVE</option>
                                     <option value="INACTIVE">INACTIVE</option>
                                     <option value="MAINTENANCE">MAINTENANCE</option>
                                 </select>
                             </td>
-                            <td class="py-4 text-sm text-gray-900">
-                                <button type="button" class="p-2 bg-green-500 rounded-md text-white save-button" onclick="showSaveConfirmation()">Save</button>
+                            <td class="py-3 text-sm text-gray-900">
+                                <button type="button" class="px-2 py-1 text-sm bg-green-500 rounded-md text-white save-button" onclick="showSaveConfirmation()">Save</button>
                             </td>
                         </tr>
                     </form>
@@ -93,7 +93,7 @@
         <x-form-error name="boat_name" />
         <x-form-error name="max_capacity" />
         <x-form-error name="status" />
-        <button class="p-2 mt-3 bg-white rounded-md hover:bg-green-500 transition duration-300" onclick="toggleAddBoatRow()" id="addNewBoatButton">Add New Boat</button>
+        <button class="px-2 py-1 mt-3 text-sm bg-white rounded-md hover:bg-green-500 transition duration-300" onclick="toggleAddBoatRow()" id="addNewBoatButton">New Boat</button>
     </div>
 
     <!-- Confirmation Modals -->
@@ -173,7 +173,7 @@
             } else {
                 addBoatRow.style.display = "none";
                 placeholderRow.style.display = "table-row";
-                addNewBoatButton.textContent = 'Add New Boat';
+                addNewBoatButton.textContent = 'New Boat';
             }
         }
 

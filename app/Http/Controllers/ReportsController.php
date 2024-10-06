@@ -9,8 +9,7 @@ use App\Models\StationSchedule;
 use App\Models\PassengerManifest;
 use App\Models\Ridership;
 use App\Models\User;
-use Barryvdh\DomPDF\Facade\Pdf as FacadePdf;
-use Barryvdh\DomPDF\PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -42,6 +41,20 @@ class ReportsController extends Controller
 
         $monthlyData = [];
         $ridershipData = [];
+
+        // Initialize all months with zero values
+        $monthlyData = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $monthlyData[$i] = [
+                'month' => Carbon::create(null, $i, 1)->format('F'),  // Convert month number to full month name
+                'ridership' => 0,
+                'student' => 0,
+                'senior' => 0,
+                'male' => 0,
+                'female' => 0,
+            ];
+        }
+
         foreach ($monthlyRidershipData as $data) {
             $monthNumber = ltrim($data->month, '0');
             $monthlyData[$monthNumber] = [
@@ -61,6 +74,13 @@ class ReportsController extends Controller
             $ridershipData[] = $monthlyRidershipData->where('month', $monthKey)->first()->total ?? 0;
         }
 
+        ksort($ridershipData);
+
+        ksort($monthlyData);
+
+        // Get the current date to limit the `month_to_date` calculation
+        $currentDate = Carbon::now()->day;
+
         // Get daily ridership and operational data for the current month
         $dailyRidershipData = Ridership::select(
             DB::raw("to_char(created_at, 'DD') as day"),
@@ -71,7 +91,8 @@ class ReportsController extends Controller
         ->whereYear('created_at', $year)
         ->whereMonth('created_at', $month)
         ->groupBy('day')
-        ->get();        
+        ->orderBy(DB::raw("to_char(created_at, 'DD')"), 'asc') // Ensure data is ordered by day in ascending order
+        ->get();
 
         // Retrieve active boats with their updated_at dates for the current month and year
         $activeBoatsByDay = BoatStatusLog::where('status', 'ACTIVE')
@@ -87,28 +108,36 @@ class ReportsController extends Controller
             ->select(DB::raw('EXTRACT(DAY FROM login_date) as day'), DB::raw('count(DISTINCT assigned_station) as count'))
             ->groupBy('day')
             ->pluck('count', 'day');
-        
-        // Initialize daily ridership data and month-to-date count
-        $dailyData = [];
-        $monthToDate = 0;
 
+        // Initialize daily ridership data
+        $dailyData = [];
+        $cumulativeTotal = 0; // Ensure this is initialized correctly
+
+        // Build daily data and calculate cumulative total for each day
         foreach ($dailyRidershipData as $data) {
             $day = (int) $data->day;
-            $monthToDate += $data->total;
+
+            // Accumulate the totals for the month-to-date calculation if the day is within the current date range
+            if ($day <= $currentDate) {
+                $cumulativeTotal += $data->total;
+            }
 
             $activeBoatsCount = $activeBoatsByDay[$day] ?? 0;
             $stationsCount = $stationsByDay[$day] ?? 0;
 
+            // Populate the daily data for the given day
             $dailyData[$day] = [
                 'date' => $day,
                 'ridership' => $data->total,
                 'boats' => $activeBoatsCount,
-                'month_to_date' => $monthToDate,
+                'month_to_date' => ($day <= $currentDate) ? $cumulativeTotal : 0, // Only accumulate until the current day, 0 for future days
                 'stations' => $stationsCount,
                 'male_passengers' => $data->male_count,
                 'female_passengers' => $data->female_count,
             ];
         }
+
+        ksort($dailyData);
 
         // Fill in missing days in the month
         $daysInMonth = Carbon::create($year, $month, 1)->daysInMonth;
@@ -117,11 +146,12 @@ class ReportsController extends Controller
                 $activeBoatsCount = $activeBoatsByDay[$day] ?? 0;
                 $stationsCount = $stationsByDay[$day] ?? 0;
 
+                // Future days beyond the current date should have 0 for `month_to_date`
                 $dailyData[$day] = [
                     'date' => $day,
                     'ridership' => 0,
                     'boats' => $activeBoatsCount,
-                    'month_to_date' => $monthToDate,
+                    'month_to_date' => ($day <= $currentDate) ? $cumulativeTotal : 0, // Future days get 0
                     'stations' => $stationsCount,
                     'male_passengers' => 0,
                     'female_passengers' => 0,
@@ -129,7 +159,7 @@ class ReportsController extends Controller
             }
         }
 
-        $dailyData = collect($dailyData)->sortBy('date')->toArray();
+        ksort($dailyData); 
 
         // Pagination for manifests is already handled above
         $passengerCounts = [];
@@ -518,5 +548,154 @@ class ReportsController extends Controller
             // Return the partial view with the filtered results if there are any
             return view('partials.manifest-results', compact('manifests'))->render();
         }
+    }
+
+    public function dailyReportPDF(Request $request) 
+    {
+        $chartImage = $request->input('chartImage');
+    
+        // Get the current date to limit the `month_to_date` calculation
+        $currentDate = Carbon::now()->day;
+        $year = $request->input('year', Carbon::now()->year);
+        $month = $request->input('month', Carbon::now()->month);
+    
+        // Get the month name from the month number
+        $monthName = Carbon::createFromDate(null, $month, 1)->format('F');
+    
+        // Get daily ridership and operational data for the current month
+        $dailyRidershipData = Ridership::select(
+            DB::raw("to_char(created_at, 'DD') as day"),
+            DB::raw('count(*) as total'),
+            DB::raw("sum(case when gender = 'Male' then 1 else 0 end) as male_count"),
+            DB::raw("sum(case when gender = 'Female' then 1 else 0 end) as female_count")
+        )
+        ->whereYear('created_at', $year)
+        ->whereMonth('created_at', $month)
+        ->groupBy('day')
+        ->orderBy(DB::raw("to_char(created_at, 'DD')"), 'asc')
+        ->get();
+    
+        // Retrieve active boats and stations data for the current month and year
+        $activeBoatsByDay = BoatStatusLog::where('status', 'ACTIVE')
+            ->whereYear('date', $year)
+            ->whereMonth('date', $month)
+            ->select(DB::raw('EXTRACT(DAY FROM date) as day'), DB::raw('count(*) as count'))
+            ->groupBy('day')
+            ->pluck('count', 'day');
+    
+        $stationsByDay = ActivityLog::whereYear('login_date', $year)
+            ->whereMonth('login_date', $month)
+            ->where('assigned_station', '!=', 'None')
+            ->select(DB::raw('EXTRACT(DAY FROM login_date) as day'), DB::raw('count(DISTINCT assigned_station) as count'))
+            ->groupBy('day')
+            ->pluck('count', 'day');
+    
+        // Initialize daily ridership data and calculate cumulative total
+        $dailyData = [];
+        $cumulativeTotal = 0;
+    
+        foreach ($dailyRidershipData as $data) {
+            $day = (int) $data->day;
+            if ($day <= $currentDate) {
+                $cumulativeTotal += $data->total;
+            }
+    
+            $activeBoatsCount = $activeBoatsByDay[$day] ?? 0;
+            $stationsCount = $stationsByDay[$day] ?? 0;
+    
+            $dailyData[$day] = [
+                'date' => $day,
+                'ridership' => $data->total,
+                'boats' => $activeBoatsCount,
+                'month_to_date' => ($day <= $currentDate) ? $cumulativeTotal : 0,
+                'stations' => $stationsCount,
+                'male_passengers' => $data->male_count,
+                'female_passengers' => $data->female_count,
+            ];
+        }
+    
+        ksort($dailyData);
+    
+        // Fill in missing days in the month
+        $daysInMonth = Carbon::create($year, $month, 1)->daysInMonth;
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            if (!isset($dailyData[$day])) {
+                $activeBoatsCount = $activeBoatsByDay[$day] ?? 0;
+                $stationsCount = $stationsByDay[$day] ?? 0;
+    
+                $dailyData[$day] = [
+                    'date' => $day,
+                    'ridership' => 0,
+                    'boats' => $activeBoatsCount,
+                    'month_to_date' => ($day <= $currentDate) ? $cumulativeTotal : 0,
+                    'stations' => $stationsCount,
+                    'male_passengers' => 0,
+                    'female_passengers' => 0,
+                ];
+            }
+        }
+    
+        ksort($dailyData);
+    
+        // Load the view with data and convert it to a PDF
+        $pdf = Pdf::loadView('pdf.daily_report_pdf', compact('dailyData', 'month', 'year', 'chartImage'));
+    
+        // Define a filename with the selected month and year
+        $filename = 'daily-report-' . $monthName . '-' . $year . '.pdf';
+    
+        // Download the PDF with the custom filename
+        return $pdf->download($filename);
+    }
+
+    public function monthlyReportPDF(Request $request)
+    {
+        $year = $request->input('year', Carbon::now()->year);
+        $monthlyChartImage = $request->input('monthlyChartImage'); // Retrieve the base64 chart image
+
+        // Fetch ridership data as before
+        $monthlyRidershipData = Ridership::select(
+            DB::raw("TO_CHAR(created_at, 'MM') as month"),
+            DB::raw('count(*) as total'),
+            DB::raw("sum(case when profession = 'Student' then 1 else 0 end) as student_count"),
+            DB::raw('sum(case when age >= 60 then 1 else 0 end) as senior_count'),
+            DB::raw("sum(case when gender = 'Male' then 1 else 0 end) as male_count"),
+            DB::raw("sum(case when gender = 'Female' then 1 else 0 end) as female_count")
+        )
+        ->whereYear('created_at', $year)
+        ->groupBy('month')
+        ->get();
+
+        // Prepare monthly data for the PDF view
+        $monthlyData = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $monthlyData[$i] = [
+                'month' => Carbon::create(null, $i, 1)->format('F'),
+                'ridership' => 0,
+                'student' => 0,
+                'senior' => 0,
+                'male' => 0,
+                'female' => 0,
+            ];
+        }
+
+        foreach ($monthlyRidershipData as $data) {
+            $monthNumber = ltrim($data->month, '0');
+            $monthlyData[$monthNumber] = [
+                'month' => Carbon::create(null, $monthNumber, 1)->format('F'),
+                'ridership' => $data->total,
+                'student' => $data->student_count,
+                'senior' => $data->senior_count,
+                'male' => $data->male_count,
+                'female' => $data->female_count,
+            ];
+        }
+
+        ksort($monthlyData);
+
+        // Load the PDF view and pass data along with the base64 image
+        $pdf = Pdf::loadView('pdf.monthly_report_pdf', compact('monthlyData', 'year', 'monthlyChartImage'));
+
+        // Return the generated PDF as a download
+        return $pdf->download('monthly_report_' . $year . '.pdf');
     }
 }

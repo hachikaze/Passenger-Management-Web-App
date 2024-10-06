@@ -4,7 +4,7 @@
     </x-slot:header>
 
     <x-slot:description>
-        Psst pogi 150 sige na ayiee ayiee beng beng boogsh
+        Welcome to the Pasig River Ferry Management System. Access reports, manage boats, and streamline operations with dashboards
     </x-slot:description>   
 
         <div class="mt-6">
