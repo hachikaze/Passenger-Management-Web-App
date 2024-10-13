@@ -11,17 +11,39 @@
         @endif
     </x-slot:alert>
 
-    <div class="mt-6 mx-5 p-2 bg-gray-200 shadow-md rounded">
+    <div class="mt-4 mx-5">
         <h1 class="text-xl font-bold pb-3">Passenger Manifest</h1>
 
         <form method="GET" action="{{ route('reports') }}">
-            <div class="flex items-center justify-between mb-3">
-                <input type="text" id="search-input" name="search" value="{{ request('search') }}" class="w-1/4 p-2 border rounded-md" placeholder="Search passengers...">
+            <div class="flex items-center justify-between">
+                <!-- Search passengers input (kept in original position) -->
+                <input type="text" id="search-input" name="search" value="{{ request('search') }}" class="w-1/4 p-2 border-2 border-gray-600 rounded-md" placeholder="Search passengers...">
+
+                <!-- Date and Boat Filter -->
+                <div class="flex items-center space-x-2">
+                    <label for="start_date" class="text-sm font-medium text-gray-700">Download Manifest for:</label>
+
+                    <!-- Start Date input -->
+                    <input type="date" id="start_date" name="date" value="{{ request('date') }}" class="bg-gray-100 p-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+
+                    <!-- Boat Dropdown -->
+                    <select id="boat" name="boat_id" class="bg-gray-100 p-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option value="">Select Boat</option>
+                        @foreach($boats as $boat)
+                            <option value="{{ $boat->id }}">{{ $boat->id }} - {{ $boat->boat_name }}</option>
+                        @endforeach
+                    </select>
+
+                    <!-- Download PDF button -->
+                    <a id="download-link" class="bg-blue-500 hover:bg-blue-700 transition duration-300 rounded-md text-sm text-white font-bold py-2 px-3">
+                        Download
+                    </a>
+                </div>
             </div>
         </form>
 
         <!-- The table that will hold the search results -->
-        <div id="search-results" class="p-3 bg-white rounded-md shadow-md">
+        <div id="search-results">
             <!-- This will be dynamically updated with the search results -->
         </div>
     </div>
@@ -134,10 +156,15 @@
         </div>
     </div>
 
-    <div class="mx-5 p-3 my-4 bg-gray-200 shadow-md rounded-md">
+    <div class="mx-5 p-2 my-6 bg-gray-200 shadow-md rounded-md">
         <div class="flex justify-center">
             <h2 class="text-lg font-bold mb-2">DAILY REPORT</h2>
         </div>
+
+        <p class="text-xs text-gray-600 mb-4 text-center">
+            This report provides a detailed view of ridership and related statistics for each day of the selected month.
+        </p>
+
         <div class="flex space-x-2">
             <div class="flex-1 p-1 bg-white rounded-md shadow-md">
                 <div class="flex justify-between">
@@ -159,7 +186,7 @@
                                     @endfor
                                 </select>
 
-                                <button type="submit" class="px-2 py-1 bg-blue-500 text-sm text-white rounded-md">
+                                <button type="submit" class="px-2 py-1 bg-blue-500 hover:bg-blue-700 transition duration-300 text-sm text-white rounded-md">
                                     Filter
                                 </button>
                             </div>
@@ -167,10 +194,10 @@
 
                         <div class="flex items-center space-x-3">
                             <p class="text-sm">Download:</p>
-                            <a href="{{ route('export.csv', ['month' => $month, 'year' => $year]) }}" class="px-2 py-1 bg-green-500 text-sm text-white rounded-md">
+                            <a href="{{ route('export.csv', ['month' => $month, 'year' => $year]) }}" class="px-2 py-1 bg-green-500 hover:bg-green-700 transition duration-300 text-sm text-white rounded-md">
                                 CSV
                             </a>
-                            <a href="{{ route('download.dailyreport', ['month' => $month, 'year' => $year]) }}" class="px-2 py-1 bg-red-500 text-sm text-white rounded-md">
+                            <a href="{{ route('download.dailyreport', ['month' => $month, 'year' => $year]) }}" class="px-2 py-1 bg-red-500 hover:bg-red-700 transition duration-300 text-sm text-white rounded-md">
                                 PDF
                             </a>
                         </div>
@@ -180,7 +207,7 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50 sticky top-0">
                                 <tr>
-                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Day</th>
                                     <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Ridership</th>
                                     <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Boats</th>
                                     <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Month to Date</th>
@@ -192,13 +219,13 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach($dailyData as $dayData)
                                 <tr class="hover:bg-gray-100">
-                                    <td class="px-3 py-2 text-sm text-gray-900">{{ $dayData['date'] }}</td>
-                                    <td class="px-3 py-2 text-sm text-gray-900">{{ $dayData['ridership'] }}</td>
-                                    <td class="px-3 py-2 text-sm text-gray-900">{{ $dayData['boats'] }}</td>
-                                    <td class="px-3 py-2 text-sm text-gray-900">{{ $dayData['month_to_date'] }}</td>
-                                    <td class="px-3 py-2 text-sm text-gray-900">{{ $dayData['stations'] }}</td>
-                                    <td class="px-3 py-2 text-sm text-gray-900">{{ $dayData['male_passengers'] }}</td>
-                                    <td class="px-3 py-2 text-sm text-gray-900">{{ $dayData['female_passengers'] }}</td>
+                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r border-gray-200">{{ $dayData['date'] }}</td>
+                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r border-gray-200">{{ $dayData['ridership'] }}</td>
+                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r border-gray-200">{{ $dayData['boats'] }}</td>
+                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r border-gray-200">{{ $dayData['month_to_date'] }}</td>
+                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r border-gray-200">{{ $dayData['stations'] }}</td>
+                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r border-gray-200">{{ $dayData['male_passengers'] }}</td>
+                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r border-gray-200">{{ $dayData['female_passengers'] }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -218,10 +245,46 @@
         </div>
     </div>
 
-    <div class="my-4 mx-5 p-3 bg-gray-200 shadow-md rounded-md">
+    <div class="flex flex-col items-center my-6 mx-5 p-2 bg-gray-200 shadow-md rounded-md">
+        <h2 class="text-lg font-bold mb-4">WEEKLY ACCOMPLISHMENT REPORT</h2>
+
+        <p class="text-xs text-gray-600 mb-4">
+            This report provides a comparison of accomplishments between the previous and current weeks, highlighting changes in quantity and percentage variance.
+        </p>
+
+        <table class="min-w-full bg-white shadow-md rounded-md">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Previous Week ({{ $previousWeekDateRange }})</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Week ({{ $currentWeekDateRange }})</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variance Quantity</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variance Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="bg-white border-b hover:bg-gray-100">
+                    <td class="px-6 py-4 text-sm text-center text-gray-900 border-r border-gray-200">{{ $previousWeekData }}</td>
+                    <td class="px-6 py-4 text-sm text-center text-gray-900 border-r border-gray-200">{{ $currentWeekData }}</td>
+                    <td class="px-6 py-4 text-sm text-center text-gray-900 border-r border-gray-200">{{ $varianceQuantity }}</td>
+                    <td class="px-6 py-4 text-sm text-center text-gray-900 border-r border-gray-200">{{ $variancePercentage }}%</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <button id="exportWeeklyCsvBtn" class="mt-4 bg-green-500 hover:bg-green-700 transition duration-300 text-sm text-white px-2 py-1 rounded-md">
+            Export CSV
+        </button>
+    </div>
+
+    <div class="items-center my-6 mx-5 p-2 bg-gray-200 shadow-md rounded-md">
         <div class="flex justify-center">
             <h2 class="text-lg font-bold mb-2">MONTHLY REPORT</h2>
         </div>
+
+        <p class="text-xs text-gray-600 mb-4 text-center">
+            This report summarizes ridership trends for each month of the selected year.
+        </p>
+        
         <div class="flex space-x-2">
             <div class="flex-1 p-1 bg-white rounded-md shadow-md">
                 <div class="bg-white rounded-md">
@@ -239,11 +302,11 @@
                         </div>
                         <div class="flex items-center space-x-3">
                             <p class="text-sm">Download:</p>
-                            <button id="exportCsvBtn" class="bg-green-500 text-white px-2 py-1 text-sm rounded-md ml-4">
+                            <button id="exportCsvBtn" class="bg-green-500 hover:bg-green-700 transition duration-300 text-white px-2 py-1 text-sm rounded-md ml-4">
                                 CSV
                             </button>
                             <!-- Updated PDF Download Link -->
-                            <a id="pdfDownloadLink" href="#" class="px-2 py-1 bg-red-500 text-sm text-white rounded-md">
+                            <a id="pdfDownloadLink" href="#" class="px-2 py-1 bg-red-500 hover:bg-red-700 transition duration-300 text-sm text-white rounded-md">
                                 PDF
                             </a>
                         </div>
@@ -255,7 +318,7 @@
                             <thead class="bg-gray-50 sticky top-0">
                                 <tr>
                                     <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Month</th>
-                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Ridership</th>
+                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Total Ridership</th>
                                     <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Student</th>
                                     <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Senior</th>
                                     <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Male</th>
@@ -265,12 +328,12 @@
                             <tbody class="bg-white divide-y divide-gray-200" id="ridershipTableBody">
                                 @foreach($monthlyData as $monthData)
                                     <tr class="hover:bg-gray-100">
-                                        <td class="px-3 py-2 text-xs text-gray-900">{{ $monthData['month'] }}</td>
-                                        <td class="px-3 py-2 text-xs text-gray-900">{{ $monthData['ridership'] }}</td>
-                                        <td class="px-3 py-2 text-xs text-gray-900">{{ $monthData['student'] }}</td>
-                                        <td class="px-3 py-2 text-xs text-gray-900">{{ $monthData['senior'] }}</td>
-                                        <td class="px-3 py-2 text-xs text-gray-900">{{ $monthData['male'] }}</td>
-                                        <td class="px-3 py-2 text-xs text-gray-900">{{ $monthData['female'] }}</td>
+                                        <td class="px-3 py-2 text-xs text-gray-900 border-r border-gray-200">{{ $monthData['month'] }}</td>
+                                        <td class="px-3 py-2 text-center text-xs text-gray-900 border-r border-gray-200">{{ $monthData['ridership'] }}</td>
+                                        <td class="px-3 py-2 text-center text-xs text-gray-900 border-r border-gray-200">{{ $monthData['student'] }}</td>
+                                        <td class="px-3 py-2 text-center text-xs text-gray-900 border-r border-gray-200">{{ $monthData['senior'] }}</td>
+                                        <td class="px-3 py-2 text-center text-xs text-gray-900 border-r border-gray-200">{{ $monthData['male'] }}</td>
+                                        <td class="px-3 py-2 text-center text-xs text-gray-900 border-r border-gray-200">{{ $monthData['female'] }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -291,31 +354,146 @@
         </div>
     </div>
 
-    <div class="flex flex-col items-center my-4 mx-5 p-3 bg-gray-200 shadow-md rounded-md">
-        <h2 class="text-lg font-bold mb-4">WEEKLY ACCOMPLISHMENT REPORT</h2>
+    <div class="items-center my-6 mx-5 p-2 bg-gray-200 shadow-md rounded-md">
+        <div class="flex justify-center">
+            <h2 class="text-lg font-bold mb-2">YEARLY REPORT</h2>
+        </div>
 
-        <table class="min-w-full bg-white shadow-md rounded-md">
-            <thead class="bg-gray-100">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Previous Week ({{ $previousWeekDateRange }})</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Week ({{ $currentWeekDateRange }})</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variance Quantity</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variance Percentage</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr class="bg-white border-b hover:bg-gray-100">
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ $previousWeekData }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ $currentWeekData }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ $varianceQuantity }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ $variancePercentage }}%</td>
-                </tr>
-            </tbody>
-        </table>
+        <p class="text-xs text-gray-600 mb-4 text-center">
+            This report presents yearly ridership data with breakdowns by students, seniors, and gender.
+        </p>
 
-        <button id="exportWeeklyCsvBtn" class="mt-4 bg-green-500 text-sm text-white px-2 py-1 rounded-md">
-            Export CSV
-        </button>
+
+        <div class="flex space-x-2">
+            <div class="flex-1 p-1 bg-white rounded-md shadow-md">
+                <div class="bg-white rounded-md">
+                    <div class="flex items-center justify-end mb-2">
+                        <div class="flex items-center space-x-3">
+                            <p class="text-sm">Download:</p>
+                            <button id="exportCsvBtn" class="bg-green-500 hover:bg-green-700 transition duration-300 text-white px-2 py-1 text-sm rounded-md ml-4">
+                                CSV
+                            </button>
+                            <!-- Updated PDF Download Link -->
+                            <a id="pdfDownloadLink" href="#" class="px-2 py-1 bg-red-500 hover:bg-red-700 transition duration-300 text-sm text-white rounded-md">
+                                PDF
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Rest of your table code -->
+                    <div class="max-h-72 overflow-y-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Year</th>
+                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Total Ridership</th>
+                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Student</th>
+                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Senior</th>
+                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Male</th>
+                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Female</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200" id="">
+                                @foreach($yearlyRidership as $yearData)
+                                    <tr class="hover:bg-gray-100">
+                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-gray-200">{{ $yearData->year  }}</td>
+                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-gray-200">{{ $yearData->total }}</td>
+                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-gray-200">{{ $yearData->student_count }}</td>
+                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-gray-200">{{ $yearData->senior_count }}</td>
+                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-gray-200">{{ $yearData->male_count }}</td>
+                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-gray-200">{{ $yearData->female_count }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 p-2 bg-white rounded-md shadow-md">
+                <canvas id="yearlyRidership"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="items-center my-6 mx-5 p-2 bg-gray-200 shadow-md rounded-md">
+        <div class="flex justify-center">
+            <h2 class="text-lg font-bold mb-2">MANIFEST REPORT</h2>
+        </div>
+
+        <p class="text-xs text-gray-600 mb-4 text-center">
+            This report presents yearly ridership data with breakdowns by students, seniors, and gender.
+        </p>
+
+        <div class="flex justify-start items-center mb-2">
+        <form action="{{ route('reports') }}" method="GET" class="inline">
+            <label for="date" class="mr-2 text-sm font-medium text-gray-700">Select Date:</label>
+            <input type="date" name="date" id="date" 
+                class="p-1 text-sm border border-gray-300 rounded-md"
+                value="{{ request('date') ?? \Carbon\Carbon::now()->toDateString() }}">
+            
+            <button type="submit" 
+                    class="ml-3 px-3 py-1 bg-blue-500 hover:bg-blue-700 transition duration-300 
+                        text-sm text-white rounded-md">
+                Filter
+            </button>
+        </form>
+
+        <form action="{{ route('download.manifestreport') }}" method="POST" class="inline">
+            @csrf
+            <input type="hidden" name="date" value="{{ request('date') ?? \Carbon\Carbon::now()->toDateString() }}">
+            
+            <button type="submit" 
+                    class="ml-3 px-3 py-1 bg-green-500 hover:bg-green-700 transition duration-300 
+                        text-sm text-white rounded-md">
+                Download PDF
+            </button>
+        </form>
+        </div>
+
+        <div class="flex-1 p-1 bg-white rounded-md shadow-md">
+            <div class="bg-white rounded-md">
+                <div class="max-h-96 overflow-y-auto">
+                    @php
+                        $categories = [
+                            'total_manifest' => 'Total Manifest',
+                            'regular' => 'Regular',
+                            'student' => 'Student',
+                            'senior' => 'Senior',
+                            'pwd' => 'PWD',
+                            'ticket_sold' => 'Ticket Sold',
+                            'free_ride' => 'Free Ride',
+                            'cash_collected' => 'Cash Collected',
+                            'vessel_trip' => 'Vessel Trip'
+                        ];
+                        $stations = ['Guadalupe', 'Hulo', 'Valenzuela', 'Lambingan', 'Sta.Ana', 'PUP', 'Quinta', 'Lawton', 'Escolta', 'Pinagbuhatan', 'San Joaquin', 'Kalawaan', 'Maybunga'];
+                    @endphp
+
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                                <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider "></th>
+                                @foreach($stations as $station)
+                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">{{ $station }}</th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach($categories as $key => $category)
+                                <tr class="hover:bg-gray-100">
+                                    <td class="px-3 py-2 text-xs text-gray-900 border-r border-gray-200">{{ $category }}</td>
+                                    @foreach($stations as $station)
+                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-gray-200">
+                                            {{ $stationData[$station][strtolower($key)] ?? '-' }}
+                                        </td>
+                                    @endforeach
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
     
     @push('scripts')
@@ -338,7 +516,7 @@
                 datasets: [{
                     label: 'Daily Ridership',
                     data: dailyData,
-                    borderColor: 'blue',
+                    borderColor: '#73C5C5',
                     fill: false,
                     tension: 0.1
                 }]
@@ -347,7 +525,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    y: { beginAtZero: true }
+                    y: { beginAtZero: true },
                 },
                 plugins: {
                     legend: {
@@ -409,15 +587,18 @@
             data: {
                 labels: months,
                 datasets: [{
-                    label: 'This Year Ridership',
-                    backgroundColor: 'lightgreen',
+                    label: 'This Month Ridership',
+                    backgroundColor: [
+                        '#8BC1F7', '#519DE9', '#BDE2B9', '#7CC674', '#A2D9D9', '#73C5C5', 
+                        '#B2B0EA', '#5752D1', '#F4B678', '#EF9234', '#3C3D99', '#C9190B'
+                    ], // Different color for each month
                     data: ridershipData,
                     borderWidth: 1
                 }]
             },
             options: {
                 responsive: true,
-                indexAxis: 'y',
+                indexAxis: 'x',
                 scales: {
                     x: { beginAtZero: true }
                 },
@@ -548,6 +729,67 @@
     </script>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const newctx1 = document.getElementById('yearlyRidership').getContext('2d');
+
+            // Data variables defined correctly for the chart
+            const years = @json($years);  // Labels for the X-axis (years)
+            const yearlyRidershipData = @json($totals);  // Ridership values
+
+            const yearlyChart = new Chart(newctx1, {
+                type: 'bar',  // Type of chart
+                data: {
+                    labels: years,  // Use `years` as the labels
+                    datasets: [{
+                        label: 'Yearly Ridership',
+                        backgroundColor: '#3C3D99',
+                        data: yearlyRidershipData,   // Use `data` for the ridership values
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'x',
+                    scales: {
+                        x: { beginAtZero: true }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                color: '#333',
+                                font: {
+                                    family: 'Helvetica',
+                                    size: 12,
+                                    weight: 'bold',
+                                }
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            cornerRadius: 5,
+                            titleFont: {
+                                family: 'Helvetica',
+                                size: 14,
+                                weight: 'bold',
+                            },
+                            bodyFont: {
+                                family: 'Helvetica',
+                                size: 12,
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+    <script>
         document.getElementById('stationDropdown').addEventListener('change', function() {
         // Hide all station info sections
         document.querySelectorAll('.station-info').forEach(function(el) {
@@ -667,6 +909,21 @@
             } else {
                 // Clear the results if input is empty
                 document.getElementById('search-results').innerHTML = '';
+            }
+        });
+    </script>
+
+    <script>
+        document.getElementById('download-link').addEventListener('click', function(event) {
+            var date = document.getElementById('start_date').value;
+            var boatId = document.getElementById('boat').value;
+
+            if (!date || !boatId) {
+                event.preventDefault(); // Prevent download if no date or boat is selected
+                alert('Please select both a date and a boat.');
+            } else {
+                var url = "{{ route('downloadManifest') }}?date=" + date + "&boat_id=" + boatId;
+                this.href = url;
             }
         });
     </script>

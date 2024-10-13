@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ridership', function (Blueprint $table) {
-            $table->id();
+        Schema::create('riderships', function (Blueprint $table) {
+            $table->id(); 
             $table->string('first_name');
-            $table->string('middle_name');
+            $table->string('middle_name')->nullable();
             $table->string('last_name');
             $table->string('address');
             $table->string('contact_number');
@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('origin');
             $table->string('destination');
             $table->timestamps();
+            $table->boolean('is_guest');
         });
     }
 

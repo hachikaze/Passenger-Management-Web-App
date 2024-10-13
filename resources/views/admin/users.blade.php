@@ -11,10 +11,10 @@
         @endif
     </x-slot:alert>
 
-    <div class="my-8 mx-5 p-3 bg-gray-200 shadow-lg rounded">
-        <h1 class="text-xl font-bold pb-4">Manage Users</h1>
+    <div class="my-8 mx-4 p-2 bg-gray-200 shadow-md rounded">
+        <h1 class="text-xl font-bold">PRF Users</h1>
 
-        <div class="mb-4 p-4 bg-white rounded-lg shadow-lg mt-4">
+        <div class="my-4 bg-white shadow-md">
             <table class="min-w-full table-auto divide-y divide-gray-200">
                 <thead class="bg-gray-100">
                     <tr>
@@ -83,10 +83,10 @@
 
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <!-- Edit Button -->
-                            <button class="p-2 bg-white rounded-md hover:bg-pink-500 transition duration-300 edit-button" onclick="toggleEdit(this, '{{ $user->id }}')">Edit</button>
+                            <button class="p-2 bg-white rounded-md hover:bg-gray-300 transition duration-300 edit-button" onclick="toggleEdit(this, '{{ $user->id }}')">Edit</button>
                             
                             <!-- Cancel Button -->
-                            <button class="ml-2 p-2 bg-gray-500 rounded-md text-white cancel-button" onclick="cancelEdit(this, '{{ $user->id }}')" style="display: none;">Cancel</button>
+                            <button class="ml-2 p-2 bg-gray-300 rounded-md text-white cancel-button" onclick="cancelEdit(this, '{{ $user->id }}')" style="display: none;">Cancel</button>
 
                             <!-- Delete Button (Initially Hidden) -->
                             <form id="deleteForm-{{ $user->id }}" action="{{ route('delete-user', $user->id) }}" method="POST" class="inline-block delete-form" style="display: none;">
@@ -99,30 +99,27 @@
                 @endforeach
                 </tbody>
             </table>
-
-            <!-- Pagination -->
-            <div class="mt-4">
-                {{ $users->links('vendor.pagination.tailwind') }}
-            </div>
         </div>
-
-        <a href="{{ route('register') }}" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 transition duration-300 text-sm text-white rounded">Add User</a>
+        
+        <div class="flex justify-end">
+            <a href="{{ route('register') }}" class="px-3 py-2 bg-emerald-500 hover:bg-emerald-600 transition duration-300 text-sm text-white rounded-md">Add New User</a>
+        </div>
         
     </div>
 
-    <div class="my-8 mx-5 p-3 bg-gray-200 shadow-lg rounded">
+    <div class="my-8 mx-5 p-2 bg-gray-200 shadow-md rounded">
         <h1 class="text-xl font-bold pb-4">User Activity Log</h1>
 
         <!-- Date Filter Form -->
         <form method="GET" action="{{ route('users.index') }}" class="mb-4">
             <label for="date" class="text-gray-700">Filter by Date:</label>
-            <input type="date" id="date" name="date" value="{{ $filterDate }}" class="ml-2 p-2 border rounded">
-            <button type="submit" class="ml-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 transition duration-300 text-sm text-white rounded">Filter</button>
+            <input type="date" id="date" name="date" value="{{ $filterDate }}" class="ml-2 p-2 border rounded-md">
+            <button type="submit" class="ml-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 transition duration-300 text-sm text-white rounded-md">Filter</button>
         </form>
 
-        <div class="mb-4 p-4 bg-white rounded-lg shadow-lg mt-4">
+        <div class="mb-4 bg-white rounded-md shadow-md mt-4 overflow-auto" style="max-height: 500px;">
             <table class="min-w-full table-auto divide-y divide-gray-200">
-                <thead class="bg-gray-100">
+                <thead class="bg-gray-100 sticky top-0">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Log ID</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">User ID</th>
@@ -143,12 +140,40 @@
                 @endforeach
                 </tbody>
             </table>
-
-            <!-- Pagination for Activity Logs -->
-            <div class="mt-4">
-                {{ $activity_logs->appends(['date' => $filterDate])->links('vendor.pagination.tailwind') }}
-            </div>
         </div>
+    </div>
+
+    <div class="my-8 mx-4 p-2 bg-gray-200 shadow-md rounded">
+        <h1 class="text-xl font-bold">Registered Passengers</h1>
+
+        <div class="my-4 bg-white shadow-md">
+            <table class="min-w-full table-auto divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Contact Number</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Age</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Gender</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Profession</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach($registeredPassenger as $registeredUser)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $registeredUser->user_id }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $registeredUser->first_name }} {{ $registeredUser->middle_name }} {{ $registeredUser->last_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $registeredUser->email }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $registeredUser->phone }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $registeredUser->age }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $registeredUser->gender }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $registeredUser->profession }}</td>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        
     </div>
 
     <!-- Confirmation Modals for Users -->

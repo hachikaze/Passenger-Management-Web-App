@@ -41,7 +41,7 @@
             </div>
         </div>
 
-        <div class="flex flex-col mt-5 mx-4 p-3 bg-gray-200 shadow-lg rounded justify-center">
+        <div class="flex flex-col mt-5 mx-auto p-3 bg-gray-200 shadow-lg rounded justify-center">
             <div class="flex space-x-3 items-center">
                 <!-- Station Ridership Chart -->
                 <div class="w-1/2 max-w-lg"> 
@@ -55,7 +55,7 @@
                     <div class="bg-white rounded-md p-2">
                         <canvas id="gender" width="220" height="208"></canvas>
                         <p class="mt-4 text-xs text-center font-bold">
-                            Male: {{ $monthToDateMale }} &nbsp; Female: {{ $monthToDateFemale }}
+                            Male: {{ $todayMaleCount }} &nbsp; Female: {{ $todayFemaleCount }}
                         </p>
                     </div>
                     <div class="bg-white rounded-md p-2">
@@ -155,9 +155,9 @@
                 data: {
                     labels: ['Male', 'Female'],
                     datasets: [{
-                        label: 'Gender Breakdown',
-                        backgroundColor: ['lightblue', 'lightpink'],
-                        data: [{{ $monthToDateMale }}, {{ $monthToDateFemale }}],
+                        label: 'Gender Breakdown for Today',
+                        backgroundColor: ['#519DE9', 'pink'],
+                        data: [{{ $todayMaleCount }}, {{ $todayFemaleCount }}],
                         borderWidth: 1
                     }]
                 },
@@ -194,11 +194,11 @@
             new Chart(profession, {
                 type: 'pie',
                 data: {
-                    labels: ['Student', 'Senior', 'Others'], // Add 'Others' label
+                    labels: ['Student', 'Senior', 'Others'],
                     datasets: [{
-                        label: 'Profession Breakdown',
-                        backgroundColor: ['gold', 'wheat', 'lightgray'], // Add color for 'Others'
-                        data: [{{ $studentsCount }}, {{ $seniorsCount }}, {{ $othersCount }}], // Add 'othersCount' data
+                        label: 'Profession Breakdown for Today',
+                        backgroundColor: ['#F4C145', '#F9E0A2', '#B8BBBE'],
+                        data: [{{ $studentsCount }}, {{ $seniorsCount }}, {{ $othersCount }}],
                         borderWidth: 1
                     }]
                 },
@@ -235,11 +235,11 @@
             new Chart(userType, {
                 type: 'pie',
                 data: {
-                    labels: ['Registered', 'Guest'], // Add 'Others' label
+                    labels: ['Registered', 'Guest'],
                     datasets: [{
-                        label: 'Passenger Type Breakdown',
-                        backgroundColor: ['lightblue', 'navy'], // Add color for 'Others'
-                        data: [{{ $registeredPassengersCount }}, {{ $guestPassengersCount }}], // Add 'othersCount' data
+                        label: 'Passenger Type Breakdown for Today',
+                        backgroundColor: ['#5752D1', '#B2B0EA'],
+                        data: [{{ $registeredPassengersCount }}, {{ $guestPassengersCount }}],
                         borderWidth: 1
                     }]
                 },
@@ -279,7 +279,7 @@
                     labels: ['Pinagbuhatan', 'Kalawaan', 'San Joaquin', 'Guadalupe', 'Hulo', 'Valenzuela', 'Lambingan', 'Sta-Ana', 'PUP', 'Quinta', 'Lawton', 'Escolta'],
                     datasets: [{
                         label: 'Number of Passengers in each station',
-                        backgroundColor: 'lightgreen',
+                        backgroundColor: '#7CC674',
                         data: @json($stationPassengerCounts),
                         borderWidth: 1,
                         borderRadius: 2,
@@ -300,6 +300,12 @@
                     }
                 }
             });
+        </script>
+
+        <script>
+            setInterval(function() {
+                location.reload();
+            }, 60000); // Refresh every 60 seconds
         </script>
     @endpush
 </x-sidebar-layout>

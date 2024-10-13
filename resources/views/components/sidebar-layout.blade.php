@@ -12,51 +12,62 @@
 <body class="font-inter">
     <div class="flex flex-col md:flex-row">
         <!-- Sidebar for desktop, collapsible on mobile -->
-        <aside class="md:sticky md:top-0 md:w-52 h-screen md:px-3 py-6 bg-white border-r dark:bg-gray-900 dark:border-gray-700 flex flex-col justify-between md:rounded-r-md w-full md:w-auto">
+        <aside class="fixed top-0 left-0 w-52 h-screen px-3 py-6 bg-white border-r dark:bg-gray-900 dark:border-gray-700 flex flex-col justify-between">
             <!-- Logo Section -->
             <div>
-                <div class="flex items-center justify-center md:mb-4 mb-3">
-                    <img class="w-20 h-20 md:w-28 md:h-28" src="/Images/PRF Logo.png" alt="PRF Logo">
+                <div class="flex items-center justify-center mb-4">
+                    <img class="w-28 h-28" src="/Images/PRF Logo.png" alt="PRF Logo">
                 </div>
 
                 <!-- Navigation Links -->
                 <nav class="mt-4">
-                    <x-nav-link href="/dashboard" :active="request()->is('dashboard')" class="flex items-center">
-                        <img src="/Images/Dashboard Icon.svg" class="w-4 h-4" alt="Dashboard Icon">
-                        <span class="mx-3 font-medium">Dashboard</span>
-                    </x-nav-link>
+                    {{-- Dashboard --}}
+                    @can('view-dashboard')
+                        <x-nav-link href="/dashboard" :active="request()->is('dashboard')" class="flex items-center">
+                            <img src="/Images/Dashboard Icon.svg" class="w-4 h-4" alt="Dashboard Icon">
+                            <span class="mx-3 font-medium">Dashboard</span>
+                        </x-nav-link>
+                    @endcan
 
-                    <x-nav-link href="/boats" :active="request()->is('boats')" class="flex items-center">
-                        <img src="/Images/Boat Icon.svg" class="w-4 h-4" alt="Boat Icon">
-                        <span class="mx-3 font-medium">Boats</span>
-                    </x-nav-link>
+                    {{-- Boats --}}
+                    @can('view-boats')
+                        <x-nav-link href="/boats" :active="request()->is('boats')" class="flex items-center">
+                            <img src="/Images/Boat Icon.svg" class="w-4 h-4" alt="Boat Icon">
+                            <span class="mx-3 font-medium">Boats</span>
+                        </x-nav-link>
+                    @endcan
 
-                    <x-nav-link href="/map" :active="request()->is('map')" class="flex items-center">
-                        <img src="/Images/Map Icon.svg" class="w-4 h-4" alt="Map Icon">
-                        <span class="mx-3 font-medium">Map</span>
-                    </x-nav-link>
+                    {{-- Map --}}
+                    @can('view-map')
+                        <x-nav-link href="/map" :active="request()->is('map')" class="flex items-center">
+                            <img src="/Images/Map Icon.svg" class="w-4 h-4" alt="Map Icon">
+                            <span class="mx-3 font-medium">Map</span>
+                        </x-nav-link>
+                    @endcan
 
-                    @can('admin-view')
+                    {{-- Reports --}}
+                    @can('view-reports')
                         <hr class="my-4 border-gray-200 dark:border-gray-600" />
-                        
                         <x-nav-link href="/reports" :active="request()->is('reports')" class="flex items-center">
                             <img src="/Images/reports.svg" class="w-4 h-4" alt="Reports Icon">
                             <span class="mx-3 font-medium">Reports</span>
                         </x-nav-link>
+                    @endcan
 
+                    {{-- Users (Super Admin Only) --}}
+                    @can('view-users')
                         <x-nav-link href="/users" :active="request()->is('users')" class="flex items-center">
                             <img src="/Images/Add user.svg" class="w-4 h-4" alt="Users Icon">
                             <span class="mx-3 font-medium">Users</span>
                         </x-nav-link>
                     @endcan
 
+                    {{-- Logout --}}
                     <div>
                         <hr class="my-4 border-gray-200 dark:border-gray-600" />
-
-                        <!-- Logout Button -->
                         <form id="logout-form" method="POST" action="/logout">
                             @csrf
-                            <button type="button" class="flex items-center pl-3.5 pr-14 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200 transition-colors duration-300 transform rounded-md" onclick="showLogoutModal()">
+                            <button type="button" class="flex items-center pl-3.5 pr-16 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200 transition-colors duration-300 transform rounded-md" onclick="showLogoutModal()">
                                 <img src="/Images/Logout.svg" class="w-4 h-4" alt="Logout Icon">
                                 <span class="mx-3 font-medium">Log Out</span>
                             </button>
@@ -66,14 +77,14 @@
             </div>
 
             <!-- User Information at Bottom -->
-            <a href="/profile" class="flex items-center px-3 -mx-2 mt-4">
-                <img class="object-cover mx-2 rounded-full h-8 w-8" src="/Images/User Icon.jpg" alt="User Avatar" />
-                <span class="mx-2 font-medium text-gray-800 dark:text-gray-200">{{ Auth::user()->first_name }} {{ Auth::user()->middle_name }} {{ Auth::user()->last_name }}</span>
+            <a href="/profile" class="flex items-center px-1 mx-4 mt-4">
+                <img class="object-cover rounded-full h-8 w-8" src="/Images/User Icon.jpg" alt="User Avatar" />
+                <span class="mx-2 font-medium text-sm text-gray-800 dark:text-gray-200">{{ Auth::user()->first_name }} {{ Auth::user()->middle_name }} {{ Auth::user()->last_name }}</span>
             </a>
         </aside>
         
         <!-- Main Content -->
-        <main class="flex-auto bg-white">
+        <main class="flex-auto bg-white ml-52">
             <header class="bg-white shadow-md rounded-b-md">
                 <div class="p-4 md:p-6 text-center">
                     <h1 class="text-lg md:text-2xl font-bold tracking-tight text-gray-900">{{ $heading }}</h1>

@@ -3,6 +3,8 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Models\PassengerManifest;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 /**
@@ -28,11 +30,12 @@ class RidershipFactory extends Factory
             'profession' => $profession[array_rand($profession)],
             'age' => $this->faker->numberBetween(18, 80),
             'gender' => $this->faker->randomElement(['Male', 'Female']),
-            'origin' => 'San Joaquin',
+            'origin' => 'Lambingan',
             'destination' => 'Kalawaan',
-            //'created_at' => $this->faker->dateTimeBetween('2023-01-01', '2023-12-31'),
-            'created_at' => Carbon::parse('2024-09-16 10:16:00'),
+            //'created_at' => $this->faker->dateTimeBetween('2024-10-11', '2022-12-31'),
+            'created_at' => '2024-10-04',
             'updated_at' => now(),
+            'is_guest' => 'true',
         ];
     }
 }

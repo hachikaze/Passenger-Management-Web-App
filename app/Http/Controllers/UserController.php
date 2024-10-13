@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\RegisteredPassenger;
 use App\Models\StationSchedule;
 use App\Models\User;
 use Carbon\Carbon;
@@ -14,6 +15,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         // Fetch users with pagination
+        $registeredPassenger = RegisteredPassenger::all();
         $users = User::paginate(10);
         $stations = StationSchedule::distinct()->pluck('station_name');
 
@@ -35,7 +37,7 @@ class UserController extends Controller
         // Fetch activity logs for the selected date
         $activity_logs = ActivityLog::whereDate('login_date', $filterDate)->paginate(10);
 
-        return view('admin.users', compact('users', 'stations', 'activity_logs', 'filterDate', 'sessions'));
+        return view('admin.users', compact('users', 'stations', 'activity_logs', 'filterDate', 'sessions', 'registeredPassenger'));
     }
 
     public function update(Request $request)

@@ -16,6 +16,19 @@
             font-family: 'Inter', sans-serif;
         }
 
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header img {
+            width: 100%; /* Ensure the image takes full width */
+            max-width: 800px; /* You can adjust this based on the size */
+            height: auto; /* Maintain aspect ratio */
+            display: block;
+            margin: 0 auto; /* Center the image */
+        }
+
         .container {
             background-color: white;
             border-radius: 6px;
@@ -80,6 +93,11 @@
 </head>
 <body>
     
+    <div class="header">
+        <!-- Add the full image banner -->
+        <img src="{{ public_path('Images/prf_header.png') }}" alt="MMDA Pasig River Ferry Header">
+    </div>
+
     <center>
         <h2>Monthly Ridership Report for {{ $year }}</h2>
     </center>

@@ -20,58 +20,39 @@ class DashboardController extends Controller
         $boats = Boat::all();
         $operationalBoats = Boat::where('status', 'ACTIVE')->count();
 
-        // Get today's date
-        $today = Carbon::today();
-
-        // Get the start of the current month
-        $startOfMonth = Carbon::now()->startOfMonth();
-
-        // Calculate Daily Passengers
-        $dailyPassengers = Ridership::whereDate('created_at', $today)->count();
-
-        // Get monthly ridership data and calculate month-to-date passengers for male and female
+        // Get today's date and the start of the current month
+        $today = Carbon::today()->format('Y-m-d');
         $year = Carbon::now()->year;
         $month = Carbon::now()->month;
 
-        $monthlyData = Ridership::select(
-            DB::raw("DATE(created_at) as date"),
-            DB::raw('count(*) as total'),
-            DB::raw('sum(case when gender = \'Male\' then 1 else 0 end) as male_count'),
-            DB::raw('sum(case when gender = \'Female\' then 1 else 0 end) as female_count')
-        )
-        ->whereYear('created_at', $year)
-        ->whereMonth('created_at', $month)
-        ->groupBy(DB::raw("DATE(created_at)"))
-        ->get();
+        // Calculate daily passengers for today
+        $dailyPassengers = Ridership::whereDate('created_at', $today)->count();
 
-        $monthToDatePassengers = 0;
-        $monthToDateMale = 0;
-        $monthToDateFemale = 0;
-
-        $dailyData = [];
-
-        foreach ($monthlyData as $data) {
-            // Accumulate total passengers, male, and female passengers
-            $monthToDatePassengers += $data->total;
-            $monthToDateMale += $data->male_count;
-            $monthToDateFemale += $data->female_count;
-
-            // Store data for each day
-            $dailyData[$data->date] = [
-                'date' => $data->date,
-                'ridership' => $data->total,
-                'month_to_date' => $monthToDatePassengers,
-                'male_passengers' => $data->male_count,
-                'month_to_date_male' => $monthToDateMale,
-                'female_passengers' => $data->female_count,
-                'month_to_date_female' => $monthToDateFemale,
-            ];
-        }
-
-        $totalMonthlyPassengers = Ridership::whereYear('created_at', $year)
+        // Get month-to-date passenger count and gender breakdown
+        $monthToDatePassengers = Ridership::whereYear('created_at', $year)
             ->whereMonth('created_at', $month)
             ->count();
 
+        $monthToDateMale = Ridership::whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->where('gender', 'Male')
+            ->count();
+
+        $monthToDateFemale = Ridership::whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->where('gender', 'Female')
+            ->count();
+
+        // Get today's male and female passenger counts
+        $todayMaleCount = Ridership::whereDate('created_at', $today)
+            ->where('gender', 'Male')
+            ->count();
+
+        $todayFemaleCount = Ridership::whereDate('created_at', $today)
+            ->where('gender', 'Female')
+            ->count();
+
+        // Station breakdown for today
         $stationLabels = [
             'Pinagbuhatan', 'Kalawaan', 'San Joaquin', 'Guadalupe', 'Hulo', 
             'Valenzuela', 'Lambingan', 'Sta-Ana', 'PUP', 'Quinta', 
@@ -91,31 +72,32 @@ class DashboardController extends Controller
                 : 0;
         }
 
-        // Count professions (Student vs Senior) within the current month
-        $professionData = Ridership::select(
-            DB::raw('profession'),
+        // Count today's professions: Student vs Senior, and calculate "Others"
+        $professionDataToday = Ridership::select(
+            DB::raw('CASE 
+                        WHEN LOWER(profession) LIKE \'%student%\' THEN \'Student\' 
+                        WHEN LOWER(profession) LIKE \'%senior%\' THEN \'Senior\'
+                        ELSE \'Others\' 
+                     END as profession_category'),
             DB::raw('count(*) as total')
         )
-        ->whereYear('created_at', $year)
-        ->whereMonth('created_at', $month)
-        ->whereIn('profession', ['Student', 'Senior'])
-        ->groupBy('profession')
+        ->whereDate('created_at', $today)
+        ->groupBy('profession_category')
         ->get()
-        ->keyBy('profession');
+        ->keyBy('profession_category');
 
-        $studentsCount = $professionData->has('Student') ? $professionData->get('Student')->total : 0;
-        $seniorsCount = $professionData->has('Senior') ? $professionData->get('Senior')->total : 0;
-        $othersCount = $totalMonthlyPassengers - ($studentsCount + $seniorsCount);
+        $studentsCount = $professionDataToday->has('Student') ? $professionDataToday->get('Student')->total : 0;
+        $seniorsCount = $professionDataToday->has('Senior') ? $professionDataToday->get('Senior')->total : 0;
+        $othersCount = $dailyPassengers - ($studentsCount + $seniorsCount);
 
-        // Count of registered and guest passengers
+        // Count of today's registered and guest passengers
         $guestPassengersCount = Ridership::whereRaw('is_guest = true')
-            ->whereDate('created_at', Carbon::today())
+            ->whereDate('created_at', $today)
             ->count();
 
         $registeredPassengersCount = Ridership::whereRaw('is_guest = false')
-            ->whereDate('created_at', Carbon::today())
+            ->whereDate('created_at', $today)
             ->count();
-
 
         return view('dashboard', compact(
             'boats',
@@ -130,8 +112,10 @@ class DashboardController extends Controller
             'seniorsCount',
             'othersCount',
             'totalRegisteredPassenger',
-            'guestPassengersCount',  // Pass guest count to view
-            'registeredPassengersCount'  // Pass registered count to view
+            'guestPassengersCount',
+            'registeredPassengersCount',
+            'todayMaleCount',
+            'todayFemaleCount'
         ));
     }
 }

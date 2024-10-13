@@ -22,22 +22,88 @@ class ReportsController extends Controller
 {
     public function index(Request $request)
     {
+        $boats = Boat::all();
+
         // Default year and month
         $year = $request->input('year', Carbon::now()->year);  // Default to current year
         $month = $request->input('month', Carbon::now()->month); // Default to current month
+        $selectedDate = $request->input('date', Carbon::now()->format('Y-m-d'));  // Default to current date
+
+        // List of stations to display in the report
+        $stations = [
+            'Guadalupe', 'Hulo', 'Valenzuela', 'Lambingan', 
+            'Sta.Ana', 'PUP', 'Quinta', 'Lawton', 'Escolta', 
+            'Pinagbuhatan', 'San Joaquin', 'Kalawaan', 'Maybunga'
+        ];
+
+        // Initialize station data with default values
+        $stationData = [];
+        foreach ($stations as $station) {
+            $stationData[$station] = [
+                'total_manifest' => 0,
+                'regular' => 0,
+                'student' => 0,
+                'senior' => 0,
+                'pwd' => 0,
+                'ticket_sold' => ' ',
+                'free_ride' => ' ',
+                'cash_collected' => ' ',
+                'vessel_trip' => ' ',
+            ];
+        }
+
+        // Get ridership data for the selected date, grouped by station
+        $stationRidershipData  = Ridership::select(
+            'origin',
+            DB::raw('COUNT(*) as total_manifest'),
+            DB::raw("SUM(CASE WHEN LOWER(profession) NOT LIKE '%student%' AND LOWER(profession) NOT LIKE '%senior%' AND LOWER(profession) NOT LIKE '%pwd%' THEN 1 ELSE 0 END) as regular"),
+            DB::raw("SUM(CASE WHEN LOWER(profession) LIKE '%student%' THEN 1 ELSE 0 END) as student"),
+            DB::raw("SUM(CASE WHEN LOWER(profession) LIKE '%senior%' THEN 1 ELSE 0 END) as senior"),
+            DB::raw("SUM(CASE WHEN LOWER(profession) LIKE '%pwd%' THEN 1 ELSE 0 END) as pwd")
+        )
+        ->whereDate('created_at', $selectedDate)  // Filter by selected date
+        ->groupBy('origin')
+        ->get();
+
+        // Map ridership data to stations
+        foreach ($stationRidershipData as $data) {
+            if (isset($stationData[$data->origin])) {
+                $stationData[$data->origin]['total_manifest'] = $data->total_manifest;
+                $stationData[$data->origin]['regular'] = $data->regular;
+                $stationData[$data->origin]['student'] = $data->student;
+                $stationData[$data->origin]['senior'] = $data->senior;
+                $stationData[$data->origin]['pwd'] = $data->pwd;
+            }
+        }
 
         // Get all the ridership data for the current year, grouped by month
         $monthlyRidershipData = Ridership::select(
             DB::raw("TO_CHAR(created_at, 'MM') as month"),
             DB::raw('count(*) as total'),
-            DB::raw("sum(case when profession = 'Student' then 1 else 0 end) as student_count"),
-            DB::raw("sum(case when age >= 60 then 1 else 0 end) as senior_count"),
+            DB::raw("sum(case when LOWER(profession) LIKE '%student%' then 1 else 0 end) as student_count"),  // Case-insensitive match for 'student'
+            DB::raw("sum(case when LOWER(profession) LIKE '%senior%' then 1 else 0 end) as senior_count"),   // Case-insensitive match for 'senior' (includes 'senior citizen')
             DB::raw("sum(case when gender = 'Male' then 1 else 0 end) as male_count"),
             DB::raw("sum(case when gender = 'Female' then 1 else 0 end) as female_count")
         )
         ->whereYear('created_at', $year)
         ->groupBy('month')
         ->get();
+
+        $yearlyRidership = Ridership::select(
+            DB::raw('EXTRACT(YEAR FROM created_at) as year'),
+            DB::raw('count(*) as total'),
+            DB::raw("sum(case when LOWER(profession) LIKE '%student%' then 1 else 0 end) as student_count"),
+            DB::raw("sum(case when LOWER(profession) LIKE '%senior%' then 1 else 0 end) as senior_count"),
+            DB::raw("sum(case when gender = 'Male' then 1 else 0 end) as male_count"),
+            DB::raw("sum(case when gender = 'Female' then 1 else 0 end) as female_count")
+        )
+        ->groupBy(DB::raw('EXTRACT(YEAR FROM created_at)'))
+        ->orderBy(DB::raw('EXTRACT(YEAR FROM created_at)'), 'asc')
+        ->get();
+    
+        // Extract the data for the chart (years and totals)
+        $years = $yearlyRidership->pluck('year');
+        $totals = $yearlyRidership->pluck('total');
 
         $monthlyData = [];
         $ridershipData = [];
@@ -67,15 +133,14 @@ class ReportsController extends Controller
             ];
             $ridershipData[$monthNumber] = $data->total;
         }
-
+    
         $ridershipData = [];
         for ($i = 1; $i <= 12; $i++) {
             $monthKey = str_pad($i, 2, '0', STR_PAD_LEFT);
             $ridershipData[] = $monthlyRidershipData->where('month', $monthKey)->first()->total ?? 0;
         }
-
+    
         ksort($ridershipData);
-
         ksort($monthlyData);
 
         // Get the current date to limit the `month_to_date` calculation
@@ -96,11 +161,11 @@ class ReportsController extends Controller
 
         // Retrieve active boats with their updated_at dates for the current month and year
         $activeBoatsByDay = BoatStatusLog::where('status', 'ACTIVE')
-            ->whereYear('date', $year)
-            ->whereMonth('date', $month)
-            ->select(DB::raw('EXTRACT(DAY FROM date) as day'), DB::raw('count(*) as count'))
-            ->groupBy('day')
-            ->pluck('count', 'day');
+        ->whereYear('date', $year)
+        ->whereMonth('date', $month)
+        ->select(DB::raw('EXTRACT(DAY FROM date) as day'), DB::raw('count(*) as count'))
+        ->groupBy('day')
+        ->pluck('count', 'day');
 
         $stationsByDay = ActivityLog::whereYear('login_date', $year)
             ->whereMonth('login_date', $month)
@@ -117,8 +182,8 @@ class ReportsController extends Controller
         foreach ($dailyRidershipData as $data) {
             $day = (int) $data->day;
 
-            // Accumulate the totals for the month-to-date calculation if the day is within the current date range
-            if ($day <= $currentDate) {
+            // Only accumulate totals if there's ridership on the current day
+            if ($day <= $currentDate && $data->total > 0) {
                 $cumulativeTotal += $data->total;
             }
 
@@ -130,7 +195,7 @@ class ReportsController extends Controller
                 'date' => $day,
                 'ridership' => $data->total,
                 'boats' => $activeBoatsCount,
-                'month_to_date' => ($day <= $currentDate) ? $cumulativeTotal : 0, // Only accumulate until the current day, 0 for future days
+                'month_to_date' => ($data->total > 0 && $day <= $currentDate) ? $cumulativeTotal : 0, // Only accumulate if ridership is greater than 0, otherwise set to 0
                 'stations' => $stationsCount,
                 'male_passengers' => $data->male_count,
                 'female_passengers' => $data->female_count,
@@ -146,12 +211,12 @@ class ReportsController extends Controller
                 $activeBoatsCount = $activeBoatsByDay[$day] ?? 0;
                 $stationsCount = $stationsByDay[$day] ?? 0;
 
-                // Future days beyond the current date should have 0 for `month_to_date`
+                // Set month_to_date to 0 for days with no ridership or future days
                 $dailyData[$day] = [
                     'date' => $day,
                     'ridership' => 0,
                     'boats' => $activeBoatsCount,
-                    'month_to_date' => ($day <= $currentDate) ? $cumulativeTotal : 0, // Future days get 0
+                    'month_to_date' => 0, // Ensure it's explicitly 0 for missing or no-ridership days
                     'stations' => $stationsCount,
                     'male_passengers' => 0,
                     'female_passengers' => 0,
@@ -159,7 +224,7 @@ class ReportsController extends Controller
             }
         }
 
-        ksort($dailyData); 
+        ksort($dailyData);
 
         // Pagination for manifests is already handled above
         $passengerCounts = [];
@@ -249,25 +314,30 @@ class ReportsController extends Controller
             'varianceQuantity', 
             'variancePercentage', 
             'year', 
-            'month'
+            'month',
+            'yearlyRidership',
+            'years',
+            'totals',
+            'stationData',
+            'boats'
         ));
     }
 
     // Method to fetch ridership data for a specific year via AJAX
     public function getDataForYear($year)
     {
-        // Fetch ridership data for the selected year, grouped by month
+        // Get all the ridership data for the current year, grouped by month
         $monthlyRidershipData = Ridership::select(
-            DB::raw("to_char(created_at, 'MM') as month"), // Use to_char to extract the month as a string
+            DB::raw("TO_CHAR(created_at, 'MM') as month"),
             DB::raw('count(*) as total'),
-            DB::raw("sum(case when profession = 'Student' then 1 else 0 end) as student_count"),
-            DB::raw('sum(case when age >= 60 then 1 else 0 end) as senior_count'),
+            DB::raw("sum(case when LOWER(profession) LIKE '%student%' then 1 else 0 end) as student_count"), 
+            DB::raw("sum(case when LOWER(profession) LIKE '%senior%' then 1 else 0 end) as senior_count"),   
             DB::raw("sum(case when gender = 'Male' then 1 else 0 end) as male_count"),
             DB::raw("sum(case when gender = 'Female' then 1 else 0 end) as female_count")
         )
         ->whereYear('created_at', $year)
         ->groupBy('month')
-        ->get();        
+        ->get();     
 
         // Convert the data into an array
         $monthlyData = [];
@@ -452,12 +522,12 @@ class ReportsController extends Controller
     {
         $year = $request->input('year', Carbon::now()->year);
 
-        // Fetch ridership data for the selected year
+        // Get all the ridership data for the current year, grouped by month
         $monthlyRidershipData = Ridership::select(
             DB::raw("TO_CHAR(created_at, 'MM') as month"),
             DB::raw('count(*) as total'),
-            DB::raw("sum(case when profession = 'Student' then 1 else 0 end) as student_count"),
-            DB::raw('sum(case when age >= 60 then 1 else 0 end) as senior_count'),
+            DB::raw("sum(case when LOWER(profession) LIKE '%student%' then 1 else 0 end) as student_count"), 
+            DB::raw("sum(case when LOWER(profession) LIKE '%senior%' then 1 else 0 end) as senior_count"),   
             DB::raw("sum(case when gender = 'Male' then 1 else 0 end) as male_count"),
             DB::raw("sum(case when gender = 'Female' then 1 else 0 end) as female_count")
         )
@@ -528,7 +598,7 @@ class ReportsController extends Controller
             $query = $request->get('query');
 
             // Filter the manifests using case-insensitive search with ILIKE
-            $manifests = PassengerManifest::where(function ($subQuery) use ($query) {
+            $manifests = Ridership::where(function ($subQuery) use ($query) {
                     $subQuery->where('first_name', 'ILIKE', "%{$query}%")
                         ->orWhere('middle_name', 'ILIKE', "%{$query}%")
                         ->orWhere('last_name', 'ILIKE', "%{$query}%")
@@ -652,12 +722,12 @@ class ReportsController extends Controller
         $year = $request->input('year', Carbon::now()->year);
         $monthlyChartImage = $request->input('monthlyChartImage'); // Retrieve the base64 chart image
 
-        // Fetch ridership data as before
+        // Get all the ridership data for the current year, grouped by month
         $monthlyRidershipData = Ridership::select(
             DB::raw("TO_CHAR(created_at, 'MM') as month"),
             DB::raw('count(*) as total'),
-            DB::raw("sum(case when profession = 'Student' then 1 else 0 end) as student_count"),
-            DB::raw('sum(case when age >= 60 then 1 else 0 end) as senior_count'),
+            DB::raw("sum(case when LOWER(profession) LIKE '%student%' then 1 else 0 end) as student_count"), 
+            DB::raw("sum(case when LOWER(profession) LIKE '%senior%' then 1 else 0 end) as senior_count"),   
             DB::raw("sum(case when gender = 'Male' then 1 else 0 end) as male_count"),
             DB::raw("sum(case when gender = 'Female' then 1 else 0 end) as female_count")
         )
@@ -697,5 +767,89 @@ class ReportsController extends Controller
 
         // Return the generated PDF as a download
         return $pdf->download('monthly_report_' . $year . '.pdf');
+    }
+
+    public function downloadManifest(Request $request)
+    {
+        $date = $request->input('date');
+        $boat_id = $request->input('boat_id');
+
+        if (!$date || !$boat_id) {
+            abort(404, 'Date or Boat not selected');
+        }
+
+        // Fetch boat details
+        $boat = Boat::findOrFail($boat_id);
+
+        // Fetch ridership data for the selected date (using only the date part of created_at) and boat
+        $passengers = Ridership::whereDate('created_at', $date)
+                            ->where('boat_id', $boat_id)
+                            ->get();
+
+        // Generate the PDF
+        $pdf = PDF::loadView('pdf.passenger_manifest_pdf', compact('boat', 'passengers'));
+
+        return $pdf->download('passenger_manifest_'.$date.'.pdf');
+    }
+
+    public function manifestReportPDF(Request $request)
+    {
+        $selectedDate = $request->get('date') ?? now()->toDateString();
+
+        // List of stations to display in the report
+        $stations = [
+            'Guadalupe', 'Hulo', 'Valenzuela', 'Lambingan', 
+            'Sta.Ana', 'PUP', 'Quinta', 'Lawton', 'Escolta', 
+            'Pinagbuhatan', 'San Joaquin', 'Kalawaan', 'Maybunga'
+        ];
+
+        // Initialize station data with default values
+        $stationData = [];
+        foreach ($stations as $station) {
+            $stationData[$station] = [
+                'total_manifest' => 0,
+                'regular' => 0,
+                'student' => 0,
+                'senior' => 0,
+                'pwd' => 0,
+                'ticket_sold' => ' ',
+                'free_ride' => ' ',
+                'cash_collected' => ' ',
+                'vessel_trip' => ' ',
+            ];
+        }
+
+        // Get ridership data for the selected date, grouped by station
+        $stationRidershipData = Ridership::select(
+            'origin',
+            DB::raw('COUNT(*) as total_manifest'),
+            DB::raw("SUM(CASE WHEN LOWER(profession) NOT LIKE '%student%' AND LOWER(profession) NOT LIKE '%senior%' AND LOWER(profession) NOT LIKE '%pwd%' THEN 1 ELSE 0 END) as regular"),
+            DB::raw("SUM(CASE WHEN LOWER(profession) LIKE '%student%' THEN 1 ELSE 0 END) as student"),
+            DB::raw("SUM(CASE WHEN LOWER(profession) LIKE '%senior%' THEN 1 ELSE 0 END) as senior"),
+            DB::raw("SUM(CASE WHEN LOWER(profession) LIKE '%pwd%' THEN 1 ELSE 0 END) as pwd")
+        )
+        ->whereDate('created_at', $selectedDate)  // Filter by selected date
+        ->groupBy('origin')
+        ->get();
+
+        // Map ridership data to stations
+        foreach ($stationRidershipData as $data) {
+            if (isset($stationData[$data->origin])) {
+                $stationData[$data->origin]['total_manifest'] = $data->total_manifest;
+                $stationData[$data->origin]['regular'] = $data->regular;
+                $stationData[$data->origin]['student'] = $data->student;
+                $stationData[$data->origin]['senior'] = $data->senior;
+                $stationData[$data->origin]['pwd'] = $data->pwd;
+            }
+        }
+
+        // Generate PDF using the Blade view
+        $pdf = PDF::loadView('pdf.manifest_report_pdf', compact('stationData', 'stations', 'selectedDate'));
+
+        // Set the paper size to A4 in landscape mode
+        $pdf->setPaper('A4', 'landscape');
+
+        // Return the generated PDF
+        return $pdf->download('manifest_report_' . $selectedDate . '.pdf');
     }
 }

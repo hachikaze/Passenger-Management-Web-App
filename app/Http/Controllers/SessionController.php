@@ -20,17 +20,20 @@ class SessionController extends Controller
 
     public function store(Request $request): RedirectResponse|View
     {
+        // Validate credentials
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required']
         ]);
 
-        if (! Auth::attempt($credentials)) {
+        // Attempt to authenticate the user
+        if (!Auth::attempt($credentials)) {
             throw ValidationException::withMessages([
                 'email' => 'Invalid email or password.'
             ]);
         }
 
+        // Check if the user is an Aide (mobile app only)
         if ($request->user()->user_type === 'Aide') {
             Auth::logout();
             throw ValidationException::withMessages([
@@ -38,6 +41,7 @@ class SessionController extends Controller
             ]);
         }
 
+        // Log activity
         ActivityLog::create([
             'user_id' => $request->user()->id,
             'assigned_station' => $request->user()->assigned_station,
@@ -46,13 +50,25 @@ class SessionController extends Controller
             'updated_at' => now(),
         ]);
 
+        // Regenerate session to prevent session fixation
         $request->session()->regenerate();
 
-        if (! $request->user()->hasVerifiedEmail()) {
+        // Handle email verification
+        if (!$request->user()->hasVerifiedEmail()) {
             return view('auth.verify-email');
         }
 
-        return redirect()->route('dashboard');
+        // Role-based redirection
+        switch ($request->user()->user_type) {
+            case 'Boat':
+                return redirect()->route('boats');
+            case 'Operator':
+            case 'Admin':
+            case 'superAdmin':
+                return redirect()->route('dashboard');
+            default:
+                return redirect()->route('dashboard');
+        }
     }
 
     public function destroy()

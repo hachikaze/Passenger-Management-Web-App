@@ -17,11 +17,11 @@
         @endif
     </x-slot:alert>
 
-    <div class="my-4 mx-40 p-3 bg-gray-200 shadow-lg rounded">
+    <div class="my-4 mx-40 p-3 bg-gray-200 shadow-md rounded">
         <h1 class="text-xl font-bold pb-4">Operational Boat Status</h1>
-        <div class="p-4 bg-white rounded-lg shadow-lg">
+        <div class="p-1 bg-white rounded-md shadow-md">
             <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+                <thead class="bg-gray-100">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Boat Name</th>

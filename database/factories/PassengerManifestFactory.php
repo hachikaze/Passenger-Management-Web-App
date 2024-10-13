@@ -24,17 +24,16 @@ class PassengerManifestFactory extends Factory
         $destination = ['Pinagbuhatan', 'Kalawaan', 'San Joaquin', 'Guadalupe', 'Hulo', 'valenzuela', 'Lambingan', ' Sta-Ana', 'PUP', 'Quinta', 'Lawton', 'Escolta'];
 
         return [
-            'first_name' => fake()->firstName(),
-            'middle_name' => fake()->lastName(),
-            'last_name' => fake()->lastName(),
-            'address' => fake()->address(),
-            'contact_number' => '09876548253',
+            'first_name' => $this->faker->firstName,
+            'middle_name' => $this->faker->firstName,
+            'last_name' => $this->faker->lastName,
+            'address' => $this->faker->address,
+            'contact_number' => $this->faker->phoneNumber,
             'profession' => $profession[array_rand($profession)],
-            'age' => fake()->numberBetween(10, 80),
+            'age' => $this->faker->numberBetween(18, 80),
             'gender' => $gender[array_rand($gender)],
-            'origin' => 'Pinagbuhatan',
-            //'destination' => $destination[array_rand($destination)],
-            'destination' => 'Guadalupe',
+            'origin' => $destination[array_rand($origin)],
+            'destination' => $destination[array_rand($destination)],
             'created_at' => Carbon::parse('2024-09-19 07:23:00'),
         ];
     }

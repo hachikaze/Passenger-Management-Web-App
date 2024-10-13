@@ -52,6 +52,7 @@ Route::middleware('auth', 'verified')->group(function() {
     Route::get('/export-csv', [ReportsController::class, 'exportDailyCsv'])->name('export.csv');
     Route::get('/reports/export-csv', [ReportsController::class, 'exportCsv']);
     Route::get('/reports/export-weekly-csv', [ReportsController::class, 'exportWeeklyCsv']);
+    Route::get('/download-manifest', [ReportsController::class, 'downloadManifest'])->name('downloadManifest');
 
     // FOR USER MANAGEMENT
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
@@ -97,3 +98,4 @@ Route::post('/email/verification-notification', function (Request $request) {
 
 Route::post('/reports/download/dailypdf', [ReportsController::class, 'dailyReportPDF'])->name('download.dailyreport');
 Route::post('/reports/download/monthlypdf', [ReportsController::class, 'monthlyReportPDF'])->name('download.monthlyreport');
+Route::post('/reports/download/manifestreportpdf', [ReportsController::class, 'manifestReportPDF'])->name('download.manifestreport');

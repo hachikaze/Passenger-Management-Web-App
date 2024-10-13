@@ -25,7 +25,9 @@
                 <div class="flex-1">
                     <div class="text-center">
                         <div class="flex justify-center mx-auto">
-                            <img class="w-auto h-20 sm:h-32" src="Images/PRF Logo.png" alt="">
+                            <a href="{{ route('login') }}">
+                                <img class="w-auto h-20 sm:h-32" src="Images/PRF Logo.png" alt="Logo">
+                            </a>
                         </div>
 
                         <p class="mt-3 text-lg">{{ $title }}</p>
