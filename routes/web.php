@@ -19,9 +19,10 @@ use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
+use App\Http\Middleware\PreventBackHistory;
 
 // MAIN FUNCTION
-Route::middleware('auth', 'verified')->group(function() {
+Route::middleware(['auth', 'verified', PreventBackHistory::class])->group(function() {
 
     // FOR DASHBOARD
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -53,6 +54,9 @@ Route::middleware('auth', 'verified')->group(function() {
     Route::get('/reports/export-csv', [ReportsController::class, 'exportCsv']);
     Route::get('/reports/export-weekly-csv', [ReportsController::class, 'exportWeeklyCsv']);
     Route::get('/download-manifest', [ReportsController::class, 'downloadManifest'])->name('downloadManifest');
+    Route::post('/reports/download/dailypdf', [ReportsController::class, 'dailyReportPDF'])->name('download.dailyreport');
+    Route::post('/reports/download/monthlypdf', [ReportsController::class, 'monthlyReportPDF'])->name('download.monthlyreport');
+    Route::post('/reports/download/manifestreportpdf', [ReportsController::class, 'manifestReportPDF'])->name('download.manifestreport');
 
     // FOR USER MANAGEMENT
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
@@ -95,7 +99,3 @@ Route::post('/email/verification-notification', function (Request $request) {
     $request->user()->sendEmailVerificationNotification();
     return back()->with('success', 'Verification link sent!');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
-
-Route::post('/reports/download/dailypdf', [ReportsController::class, 'dailyReportPDF'])->name('download.dailyreport');
-Route::post('/reports/download/monthlypdf', [ReportsController::class, 'monthlyReportPDF'])->name('download.monthlyreport');
-Route::post('/reports/download/manifestreportpdf', [ReportsController::class, 'manifestReportPDF'])->name('download.manifestreport');

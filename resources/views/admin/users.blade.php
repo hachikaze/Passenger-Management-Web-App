@@ -14,7 +14,7 @@
     <div class="my-8 mx-4 p-2 bg-gray-200 shadow-md rounded">
         <h1 class="text-xl font-bold">PRF Users</h1>
 
-        <div class="my-4 bg-white shadow-md">
+        <div class="my-4 bg-white shadow-md overflow-x-auto">
             <table class="min-w-full table-auto divide-y divide-gray-200">
                 <thead class="bg-gray-100">
                     <tr>

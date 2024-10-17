@@ -16,7 +16,7 @@ class UserController extends Controller
     {
         // Fetch users with pagination
         $registeredPassenger = RegisteredPassenger::all();
-        $users = User::paginate(10);
+        $users = User::where('user_type', '!=', 'superAdmin')->paginate(10);
         $stations = StationSchedule::distinct()->pluck('station_name');
 
         // Define offline threshold (in minutes)

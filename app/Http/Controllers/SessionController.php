@@ -13,8 +13,22 @@ use App\Models\ActivityLog;
 
 class SessionController extends Controller
 {
-    public function create()
+    public function create(Request $request)
     {
+        // Redirect authenticated users to the dashboard
+        if (Auth::check()) {
+            switch ($request->user()->user_type) {
+                case 'Boat':
+                    return redirect()->route('boats');
+                case 'Operator':
+                case 'Admin':
+                case 'superAdmin':
+                    return redirect()->route('dashboard');
+                default:
+                    return redirect()->route('dashboard');
+            }
+        }
+
         return view('auth.login');
     }
 
@@ -61,13 +75,25 @@ class SessionController extends Controller
         // Role-based redirection
         switch ($request->user()->user_type) {
             case 'Boat':
-                return redirect()->route('boats');
+                return redirect()->route('boats')->withHeaders([
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache',
+                    'Expires' => '0'
+                ]);
             case 'Operator':
             case 'Admin':
             case 'superAdmin':
-                return redirect()->route('dashboard');
+                return redirect()->route('dashboard')->withHeaders([
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache',
+                    'Expires' => '0'
+                ]);
             default:
-                return redirect()->route('dashboard');
+                return redirect()->route('dashboard')->withHeaders([
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache',
+                    'Expires' => '0'
+                ]);
         }
     }
 
@@ -75,8 +101,12 @@ class SessionController extends Controller
     {
         Auth::logout();
 
-        // Redirect to login instead of '/'
-        return redirect()->route('login');
+        // Prevent back button after logout
+        return redirect()->route('login')->withHeaders([
+            'Cache-Control' => 'no-cache, no-store, must-revalidate', 
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
     }
 
     public function showProfile()

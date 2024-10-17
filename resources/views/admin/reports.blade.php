@@ -67,7 +67,7 @@
                     <div>
                         <label for="stationDropdown" class="block text-sm font-medium text-gray-700">Select Station:</label>
                         <select id="stationDropdown" class="mt-1 block w-full pl-3 pr-10 py-2 bg-gray-100 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                            <option value="" selected disabled>Select a Station</option>
+                            <option value="" selected>Select a Station</option>
                             @foreach(array_keys($passengerCounts) as $station)
                                 <option value="{{ str_replace(' ', '_', $station) }}">{{ $station }}</option>
                             @endforeach
@@ -204,33 +204,33 @@
                     </div>
 
                     <div class="max-h-80 mt-2 overflow-y-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50 sticky top-0">
-                                <tr>
-                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Day</th>
-                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Ridership</th>
-                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Boats</th>
-                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Month to Date</th>
-                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Stations</th>
-                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Male</th>
-                                    <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Female</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach($dailyData as $dayData)
-                                <tr class="hover:bg-gray-100">
-                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r border-gray-200">{{ $dayData['date'] }}</td>
-                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r border-gray-200">{{ $dayData['ridership'] }}</td>
-                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r border-gray-200">{{ $dayData['boats'] }}</td>
-                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r border-gray-200">{{ $dayData['month_to_date'] }}</td>
-                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r border-gray-200">{{ $dayData['stations'] }}</td>
-                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r border-gray-200">{{ $dayData['male_passengers'] }}</td>
-                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r border-gray-200">{{ $dayData['female_passengers'] }}</td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+    <table class="min-w-full divide-y divide-gray-200 table-fixed">
+        <thead class="bg-gray-50 sticky top-0 z-10">
+            <tr>
+                <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Day</th>
+                <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Ridership</th>
+                <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Boats</th>
+                <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Month to Date</th>
+                <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Stations</th>
+                <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Male</th>
+                <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Female</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            @foreach($dailyData as $dayData)
+            <tr class="hover:bg-gray-100">
+                <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['date'] }}</td>
+                <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['ridership'] }}</td>
+                <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['boats'] }}</td>
+                <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['month_to_date'] }}</td>
+                <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['stations'] }}</td>
+                <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['male_passengers'] }}</td>
+                <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['female_passengers'] }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+</div>
                 </div>
 
                 <div class="flex-1 p-1 bg-white rounded-md shadow-md">
@@ -422,7 +422,7 @@
         </div>
 
         <p class="text-xs text-gray-600 mb-4 text-center">
-            This report presents yearly ridership data with breakdowns by students, seniors, and gender.
+            This table shows daily ridership data by station, passenger type, tickets sold, free rides, cash collected, and vessel trips.
         </p>
 
         <div class="flex justify-start items-center mb-2">
@@ -492,6 +492,12 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <div class="mt-2 w-full flex justify-center items-center h-full">
+            <div style="width: 100%; height: 400px; border: 2px solid #ccc;" class="flex justify-center p-2 bg-white rounded-md shadow-md">
+                <canvas id="manifestBarChart" class="border-solid border-2 border-black p-1 rounded-md"></canvas>
             </div>
         </div>
     </div>
@@ -924,6 +930,70 @@
             } else {
                 var url = "{{ route('downloadManifest') }}?date=" + date + "&boat_id=" + boatId;
                 this.href = url;
+            }
+        });
+    </script>
+
+    <script>
+        // Initialize the chart
+        const ctxnew = document.getElementById('manifestBarChart');
+
+        // Extract the station names and total manifest data from the server
+        const stations = @json(array_keys($stationData));
+        const totalManifest = @json(array_column($stationData, 'total_manifest'));
+
+        const manifestChart = new Chart(ctxnew, {
+            type: 'bar',
+            data: {
+                labels: stations, // Station names
+                datasets: [{
+                    label: 'Total Manifest',
+                    backgroundColor: [
+                        '#8BC1F7', '#519DE9', '#BDE2B9', '#7CC674', '#A2D9D9', '#73C5C5',
+                        '#B2B0EA', '#5752D1', '#F4B678', '#EF9234', '#3C3D99', '#C9190B'
+                    ],
+                    data: totalManifest, // Total manifest count per station
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                indexAxis: 'x', // Horizontal bar chart
+                scales: {
+                    x: { beginAtZero: true },
+                    y: { beginAtZero: true } // Ensure it starts at 0
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            color: '#333',
+                            font: {
+                                family: 'Helvetica',
+                                size: 12,
+                                weight: 'bold',
+                            }
+                        }
+                    },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        cornerRadius: 5,
+                        titleFont: {
+                            family: 'Helvetica',
+                            size: 14,
+                            weight: 'bold',
+                        },
+                        bodyFont: {
+                            family: 'Helvetica',
+                            size: 12,
+                        }
+                    }
+                }
             }
         });
     </script>
