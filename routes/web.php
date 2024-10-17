@@ -92,10 +92,19 @@ Route::get('/email/verify', function () {
 
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
     $request->fulfill();
-    return redirect('/')->with('success', 'Your email has been successfully verified.');
+    switch ($request->user()->user_type) {
+        case 'Boat':
+            return redirect()->route('boats')->with('success', 'Your email has been successfully verified.');
+        case 'Operator':
+        case 'Admin':
+        case 'superAdmin':
+            return redirect()->route('dashboard')->with('success', 'Your email has been successfully verified.');
+        default:
+            return redirect()->route('dashboard')->with('success', 'Your email has been successfully verified.');
+    }
 })->middleware(['auth', 'signed'])->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
     $request->user()->sendEmailVerificationNotification();
-    return back()->with('success', 'Verification link sent!');
+    return redirect('/email/verify')->with('success', 'Verification link sent!');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
