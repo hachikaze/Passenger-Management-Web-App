@@ -64,6 +64,8 @@
 
     <p><strong>Boat Name:</strong> {{ $boat->boat_name }}</p>
     <p><strong>Boat Capacity:</strong> {{ $boat->max_capacity }}</p>
+    <!-- Add the selected date below the boat capacity -->
+    <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($date)->format('F j, Y') }}</p>
 
     <table>
         <thead>
@@ -90,7 +92,8 @@
                 <td>{{ $passenger->gender }}</td>
                 <td>{{ $passenger->origin }}</td>
                 <td>{{ $passenger->destination }}</td>
-                <td>{{ $passenger->created_at }}</td>
+                <!-- Format created_at to display time only -->
+                <td>{{ \Carbon\Carbon::parse($passenger->created_at)->format('h:i A') }}</td>
             </tr>
             @endforeach
         </tbody>

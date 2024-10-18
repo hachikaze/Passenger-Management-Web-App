@@ -19,26 +19,7 @@
                 <!-- Search passengers input (kept in original position) -->
                 <input type="text" id="search-input" name="search" value="{{ request('search') }}" class="w-1/4 p-2 border-2 border-gray-600 rounded-md" placeholder="Search passengers...">
 
-                <!-- Date and Boat Filter -->
-                <div class="flex items-center space-x-2">
-                    <label for="start_date" class="text-sm font-medium text-gray-700">Download Manifest for:</label>
-
-                    <!-- Start Date input -->
-                    <input type="date" id="start_date" name="date" value="{{ request('date') }}" class="bg-gray-100 p-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-
-                    <!-- Boat Dropdown -->
-                    <select id="boat" name="boat_id" class="bg-gray-100 p-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                        <option value="">Select Boat</option>
-                        @foreach($boats as $boat)
-                            <option value="{{ $boat->id }}">{{ $boat->id }} - {{ $boat->boat_name }}</option>
-                        @endforeach
-                    </select>
-
-                    <!-- Download PDF button -->
-                    <a id="download-link" class="bg-blue-500 hover:bg-blue-700 transition duration-300 rounded-md text-sm text-white font-bold py-2 px-3">
-                        Download
-                    </a>
-                </div>
+               
             </div>
         </form>
 
@@ -66,12 +47,33 @@
                     <!-- Station Dropdown -->
                     <div>
                         <label for="stationDropdown" class="block text-sm font-medium text-gray-700">Select Station:</label>
-                        <select id="stationDropdown" class="mt-1 block w-full pl-3 pr-10 py-2 bg-gray-100 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <select id="stationDropdown" name="station" class="mt-1 block w-full pl-3 pr-10 py-2 bg-gray-100 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
                             <option value="" selected>Select a Station</option>
                             @foreach(array_keys($passengerCounts) as $station)
                                 <option value="{{ str_replace(' ', '_', $station) }}">{{ $station }}</option>
                             @endforeach
                         </select>
+                    </div>
+
+                    <!-- Boat Dropdown -->
+                    <div>
+                        <label for="boatDropdown" class="block text-sm font-medium text-gray-700">Select Boat:</label>
+                        <select id="boatDropdown" name="boat_id" class="mt-1 block w-full pl-3 pr-10 py-2 bg-gray-100 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                            <option value="">Select Boat</option>
+                            @foreach($boats as $boat)
+                                <option value="{{ $boat->id }}">{{ $boat->boat_name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Download PDF Button -->
+                    <div>
+                        <label for="downloadButton" class="block text-sm font-medium text-gray-700 invisible">Download</label>
+                        <a id="download-link" 
+                        href="#"
+                        class="bg-blue-500 hover:bg-blue-700 transition duration-300 rounded-md text-sm text-white font-bold py-2 px-3 cursor-pointer">
+                            Download Manifest
+                        </a>
                     </div>
                 </form>
             </div>
@@ -146,12 +148,40 @@
     <!-- Passenger Details Modal -->
     <div id="passengerDetailsModal" class="fixed z-10 inset-0 overflow-y-auto hidden bg-gray-800 bg-opacity-50">
         <div class="flex items-center justify-center min-h-screen">
-            <div class="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
-                <h2 id="modalTitle" class="text-lg font-small text-gray-900 mb-4">Passenger Details</h2>
-                <div id="passengerDetailsContent" class="max-h-96 overflow-y-auto">
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-4xl w-full">
+                <h2 id="modalTitle" class="text-lg font-semibold text-gray-900 mb-4">Passenger Details</h2>
+                <div id="passengerDetailsContent" class="max-h-[80vh] overflow-auto">
                     <!-- Passenger details will be dynamically inserted here -->
                 </div>
-                <button onclick="closePassengerDetailsModal()" class="mt-4 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Close</button>
+                <button onclick="closePassengerDetailsModal()" 
+                        class="mt-4 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="items-center my-6 mx-5 p-2 bg-gray-200 shadow-md rounded-md">
+        <div class="flex-1 p-1 bg-white rounded-md shadow-md">
+            <div class="max-h-96 overflow-y-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50 sticky top-0">
+                        <tr class="bg-gray-100">
+                            <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Boat Name</th>
+                            <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Total Passengers</th>
+                            <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Last Trip Date</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach($boats as $boat)
+                            <tr class="hover:bg-gray-100">
+                                <td class="px-3 py-2 text-xs text-gray-900 border-r border-gray-200">{{ $boat->boat_name }}</td>
+                                <td class="px-3 py-2 text-xs text-gray-900 border-r border-gray-200">{{ $boat->total_passengers }}</td>
+                                <td class="px-3 py-2 text-xs text-gray-900 border-r border-gray-200">{{ $boat->last_trip_date }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -204,33 +234,33 @@
                     </div>
 
                     <div class="max-h-80 mt-2 overflow-y-auto">
-    <table class="min-w-full divide-y divide-gray-200 table-fixed">
-        <thead class="bg-gray-50 sticky top-0 z-10">
-            <tr>
-                <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Day</th>
-                <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Ridership</th>
-                <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Boats</th>
-                <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Month to Date</th>
-                <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Stations</th>
-                <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Male</th>
-                <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Female</th>
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-            @foreach($dailyData as $dayData)
-            <tr class="hover:bg-gray-100">
-                <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['date'] }}</td>
-                <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['ridership'] }}</td>
-                <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['boats'] }}</td>
-                <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['month_to_date'] }}</td>
-                <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['stations'] }}</td>
-                <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['male_passengers'] }}</td>
-                <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['female_passengers'] }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
-</div>
+                        <table class="min-w-full divide-y divide-gray-200 table-fixed">
+                            <thead class="bg-gray-50 sticky top-0 z-10">
+                                <tr>
+                                    <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Day</th>
+                                    <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Ridership</th>
+                                    <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Boats</th>
+                                    <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Month to Date</th>
+                                    <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Stations</th>
+                                    <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Male</th>
+                                    <th class="w-1/7 px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase">Female</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach($dailyData as $dayData)
+                                <tr class="hover:bg-gray-100">
+                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['date'] }}</td>
+                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['ridership'] }}</td>
+                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['boats'] }}</td>
+                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['month_to_date'] }}</td>
+                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['stations'] }}</td>
+                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['male_passengers'] }}</td>
+                                    <td class="px-3 py-2 text-sm text-center text-gray-900 border-r">{{ $dayData['female_passengers'] }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <div class="flex-1 p-1 bg-white rounded-md shadow-md">
@@ -849,24 +879,32 @@
                     console.log(`Passengers found for ${direction}:`, passengers);
 
                     const passengerDetails = `
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                ${passengers.map(passenger => `
+                        <div class="max-h-[80vh] overflow-auto rounded-lg shadow-lg">
+                            <table class="w-full table-auto divide-y divide-gray-200">
+                                <thead class="bg-gray-50 sticky top-0">
                                     <tr>
-                                        <td class="px-6 py-4 text-sm text-gray-900">${passenger.first_name}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">${passenger.gender}</td>
-                                        <td class="px-6 py-4 text-sm text-gray-900">${passenger.age}</td>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profession</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Origin</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
                                     </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    ${passengers.map(passenger => `
+                                        <tr>
+                                            <td class="px-6 py-4 text-sm text-gray-900">${passenger.first_name} ${passenger.middle_name} ${passenger.last_name}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-900">${passenger.gender}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-900">${passenger.age}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-900">${passenger.profession}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-900">${passenger.origin}</td>
+                                            <td class="px-6 py-4 text-sm text-gray-900">${passenger.destination}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
                     `;
                     document.getElementById('passengerDetailsContent').innerHTML = passengerDetails;
                     document.getElementById('passengerDetailsModal').classList.remove('hidden'); // Show modal
@@ -921,14 +959,15 @@
 
     <script>
         document.getElementById('download-link').addEventListener('click', function(event) {
-            var date = document.getElementById('start_date').value;
-            var boatId = document.getElementById('boat').value;
+            var date = document.getElementById('datePicker').value;
+            var boatId = document.getElementById('boatDropdown').value;
+            var station = document.getElementById('stationDropdown').value;
 
-            if (!date || !boatId) {
-                event.preventDefault(); // Prevent download if no date or boat is selected
-                alert('Please select both a date and a boat.');
+            if (!date || !boatId || !station) {
+                event.preventDefault(); // Prevent download if no date, boat, or station is selected
+                alert('Please select a date, boat, and station.');
             } else {
-                var url = "{{ route('downloadManifest') }}?date=" + date + "&boat_id=" + boatId;
+                var url = "{{ route('downloadManifest') }}?date=" + date + "&boat_id=" + boatId + "&station=" + station;
                 this.href = url;
             }
         });

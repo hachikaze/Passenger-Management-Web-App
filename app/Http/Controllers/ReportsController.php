@@ -22,12 +22,21 @@ class ReportsController extends Controller
 {
     public function index(Request $request)
     {
-        $boats = Boat::all();
-
         // Default year and month
         $year = $request->input('year', Carbon::now()->year);  // Default to current year
         $month = $request->input('month', Carbon::now()->month); // Default to current month
         $selectedDate = $request->input('date', Carbon::now()->format('Y-m-d'));  // Default to current date
+
+        $boats = Boat::leftJoin('ridership', function ($join) use ($selectedDate) {
+            $join->on('boats.id', '=', 'ridership.boat_id')
+                ->whereDate('ridership.created_at', $selectedDate); // Filter by selected date
+        })
+        ->select('boats.id', 'boats.boat_name', 
+            DB::raw('COUNT(ridership.id) as total_passengers'),
+            DB::raw('MAX(ridership.created_at) as last_trip_date'),
+            )
+        ->groupBy('boats.id', 'boats.boat_name')
+        ->get();
 
         // List of stations to display in the report
         $stations = [
@@ -240,7 +249,7 @@ class ReportsController extends Controller
             'Hulo' => 4,
             'Valenzuela' => 5,
             'Lambingan' => 6,
-            'Sta-Ana' => 7,
+            'Sta.Ana' => 7,
             'PUP' => 8,
             'Quinta' => 9,
             'Lawton' => 10,
@@ -383,7 +392,7 @@ class ReportsController extends Controller
             'Hulo' => 4,
             'Valenzuela' => 5,
             'Lambingan' => 6,
-            'Sta-Ana' => 7,
+            'Sta.Ana' => 7,
             'PUP' => 8,
             'Quinta' => 9,
             'Lawton' => 10,
@@ -773,21 +782,23 @@ class ReportsController extends Controller
     {
         $date = $request->input('date');
         $boat_id = $request->input('boat_id');
+        $station = $request->input('station');
 
-        if (!$date || !$boat_id) {
-            abort(404, 'Date or Boat not selected');
+        if (!$date || !$boat_id || !$station) {
+            abort(404, 'Date, Boat, or Station not selected');
         }
 
         // Fetch boat details
         $boat = Boat::findOrFail($boat_id);
 
-        // Fetch ridership data for the selected date (using only the date part of created_at) and boat
+        // Fetch ridership data for the selected date, station, and boat
         $passengers = Ridership::whereDate('created_at', $date)
-                            ->where('boat_id', $boat_id)
-                            ->get();
+            ->where('boat_id', $boat_id)
+            ->where('origin', $station)
+            ->get();
 
         // Generate the PDF
-        $pdf = PDF::loadView('pdf.passenger_manifest_pdf', compact('boat', 'passengers'));
+        $pdf = PDF::loadView('pdf.passenger_manifest_pdf', compact('boat', 'passengers', 'date'));
 
         return $pdf->download('passenger_manifest_'.$date.'.pdf');
     }
