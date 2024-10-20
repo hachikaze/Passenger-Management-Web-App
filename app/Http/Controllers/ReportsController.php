@@ -452,53 +452,85 @@ class ReportsController extends Controller
         $year = $request->input('year', Carbon::now()->year);
         $month = $request->input('month', Carbon::now()->month);
 
-        // Use Carbon to get the full month name
-        $monthName = Carbon::createFromDate($year, $month, 1)->format('F'); // E.g., 'September'
+        $monthName = Carbon::createFromDate($year, $month, 1)->format('F');
 
-        // Fetch the daily ridership data for the selected month and year
+        // List of stations
+        $stations = ['Guadalupe', 'Hulo', 'Valenzuela', 'Lambingan', 'Sta.Ana', 'PUP', 'Quinta', 'Lawton', 'Escolta', 'Maybunga', 'San Joaquin', 'Kalawaan', 'Pinagbuhatan'];
+
+        // Fetch the ridership data
         $dailyRidershipData = Ridership::select(
             DB::raw("TO_CHAR(created_at, 'DD') as day"),
+            DB::raw('origin as station'),
             DB::raw('count(*) as total'),
-            DB::raw("sum(case when gender = 'Male' then 1 else 0 end) as male_count"),
-            DB::raw("sum(case when gender = 'Female' then 1 else 0 end) as female_count")
+            DB::raw("sum(case when LOWER(profession) LIKE '%student%' then 1 else 0 end) as student_count"),
+            DB::raw("sum(case when LOWER(profession) LIKE '%senior%' then 1 else 0 end) as senior_count"),
+            DB::raw("sum(case when LOWER(profession) NOT LIKE '%student%' AND LOWER(profession) NOT LIKE '%senior%' then 1 else 0 end) as regular_count"),
+            DB::raw("sum(case when gender ILIKE 'male' then 1 else 0 end) as male_count"),
+            DB::raw("sum(case when gender ILIKE 'female' then 1 else 0 end) as female_count")
         )
         ->whereYear('created_at', $year)
         ->whereMonth('created_at', $month)
-        ->groupBy(DB::raw("TO_CHAR(created_at, 'DD')"))
+        ->groupBy(DB::raw("TO_CHAR(created_at, 'DD')"), 'origin')
         ->get();
-        
-        $activeBoatsByDay = BoatStatusLog::where('status', 'ACTIVE')
-            ->whereYear('date', $year)
-            ->whereMonth('date', $month)
-            ->select(DB::raw('EXTRACT(DAY FROM date) as day'), DB::raw('count(*) as count'))
-            ->groupBy('day')
-            ->pluck('count', 'day');  // Pluck day and count of active boats
-
-        $stationsByDay = ActivityLog::whereYear('login_date', $year)
-            ->whereMonth('login_date', $month)
-            ->select(DB::raw('EXTRACT(DAY FROM login_date) as day'), DB::raw('count(DISTINCT assigned_station) as count'))
-            ->groupBy('day')
-            ->pluck('count', 'day');  // Pluck day and count of distinct stations
 
         $dailyData = [];
-        $monthToDate = 0;
+        $stationTotals = array_fill_keys($stations, 0);
+        $overallTotals = [
+            'total' => 0,
+            'student' => 0,
+            'senior' => 0,
+            'regular' => 0,
+            'male' => 0,
+            'female' => 0,
+        ];
 
-        foreach ($dailyRidershipData as $data) {
-            $day = (int) $data->day;
-            $monthToDate += $data->total;
-
-            $activeBoatsCount = $activeBoatsByDay[$day] ?? 0;
-            $stationsCount = $stationsByDay[$day] ?? 0;
-
-            $dailyData[] = [
-                'date' => $day,
-                'ridership' => $data->total,
-                'boats' => $activeBoatsCount,
-                'month_to_date' => $monthToDate,
-                'stations' => $stationsCount,
-                'male_passengers' => $data->male_count,
-                'female_passengers' => $data->female_count,
+        foreach (range(1, 31) as $day) {
+            $dayData = [
+                'Date' => $day,
+                'Guadalupe' => 0,
+                'Hulo' => 0,
+                'Valenzuela' => 0,
+                'Lambingan' => 0,
+                'Sta.Ana' => 0,
+                'PUP' => 0,
+                'Quinta' => 0,
+                'Lawton' => 0,
+                'Escolta' => 0,
+                'Maybunga' => 0,
+                'San Joaquin' => 0,
+                'Kalawaan' => 0,
+                'Pinagbuhatan' => 0,
+                'Total' => 0,
+                'Student' => 0,
+                'Senior' => 0,
+                'Regular' => 0,
+                'Male' => 0,
+                'Female' => 0,
             ];
+
+            foreach ($dailyRidershipData as $data) {
+                if ((int)$data->day == $day) {
+                    $dayData[$data->station] = $data->total;
+                    $dayData['Total'] += $data->total;
+                    $dayData['Student'] += $data->student_count;
+                    $dayData['Senior'] += $data->senior_count;
+                    $dayData['Regular'] += $data->regular_count;
+                    $dayData['Male'] += $data->male_count;
+                    $dayData['Female'] += $data->female_count;
+
+                    // Add to station totals
+                    $stationTotals[$data->station] += $data->total;
+
+                    // Add to overall totals
+                    $overallTotals['total'] += $data->total;
+                    $overallTotals['student'] += $data->student_count;
+                    $overallTotals['senior'] += $data->senior_count;
+                    $overallTotals['regular'] += $data->regular_count;
+                    $overallTotals['male'] += $data->male_count;
+                    $overallTotals['female'] += $data->female_count;
+                }
+            }
+            $dailyData[] = $dayData;
         }
 
         // Define the CSV header with a dynamic filename
@@ -509,16 +541,38 @@ class ReportsController extends Controller
         ];
 
         // Prepare the CSV content
-        $callback = function() use ($dailyData) {
+        $callback = function () use ($dailyData, $stations, $stationTotals, $overallTotals, $monthName, $year) {
             $file = fopen('php://output', 'w');
 
-            // Add the header
-            fputcsv($file, ['Date', 'Ridership', 'Boats', 'Month to Date', 'Stations', 'Male Passengers', 'Female Passengers']);
+            // Add a title row (simulating the image)
+            fputcsv($file, ['MMDA Pasig River Ferry Ridership Report']);
+            
+            // Add the month header row
+            fputcsv($file, ["$monthName 1-31, $year"]);
 
-            // Add the data
+            // Add header row for data columns
+            fputcsv($file, array_merge(['Date'], $stations, ['Total', 'Student', 'Senior', 'Regular', 'Male', 'Female']));
+
+            // Add the data rows
             foreach ($dailyData as $row) {
-                fputcsv($file, $row);
+                fputcsv($file, array_values($row));
             }
+
+            // Add station totals row
+            fputcsv($file, array_merge(
+                ['TOTAL'],
+                array_values($stationTotals), // Station totals
+                [$overallTotals['total'], $overallTotals['student'], $overallTotals['senior'], $overallTotals['regular'], $overallTotals['male'], $overallTotals['female']]
+            ));
+
+            // Add remarks section for further totals (to mimic the additional remarks like in the image)
+            fputcsv($file, []); // Empty row
+            fputcsv($file, ['REMARKS:']);
+            fputcsv($file, ['STUDENT - ' . number_format($overallTotals['student'])]);
+            fputcsv($file, ['REGULAR - ' . number_format($overallTotals['regular'])]);
+            fputcsv($file, ['SENIOR - ' . number_format($overallTotals['senior'])]);
+            fputcsv($file, ['MALE - ' . number_format($overallTotals['male'])]);
+            fputcsv($file, ['FEMALE - ' . number_format($overallTotals['female'])]);
 
             fclose($file);
         };

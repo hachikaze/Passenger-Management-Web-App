@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Boat;
 use App\Models\PassengerManifest;
 use App\Models\RegisteredPassenger;
@@ -24,6 +25,7 @@ class DashboardController extends Controller
         $today = Carbon::today()->format('Y-m-d');
         $year = Carbon::now()->year;
         $month = Carbon::now()->month;
+        $day = Carbon::now()->day;  // Get the current day number
 
         // Calculate daily passengers for today
         $dailyPassengers = Ridership::whereDate('created_at', $today)->count();
@@ -78,7 +80,7 @@ class DashboardController extends Controller
                         WHEN LOWER(profession) LIKE \'%student%\' THEN \'Student\' 
                         WHEN LOWER(profession) LIKE \'%senior%\' THEN \'Senior\'
                         ELSE \'Others\' 
-                     END as profession_category'),
+                    END as profession_category'),
             DB::raw('count(*) as total')
         )
         ->whereDate('created_at', $today)
@@ -99,6 +101,17 @@ class DashboardController extends Controller
             ->whereDate('created_at', $today)
             ->count();
 
+        // Calculate the number of stations based on user logins
+        $stationsByDay = ActivityLog::whereYear('login_date', $year)
+            ->whereMonth('login_date', $month)
+            ->where('assigned_station', '!=', 'None')
+            ->select(DB::raw('EXTRACT(DAY FROM login_date) as day'), DB::raw('count(DISTINCT assigned_station) as count'))
+            ->groupBy('day')
+            ->pluck('count', 'day');
+        
+        // Summing the count of distinct stations for today
+        $activeStationsToday = $stationsByDay[$day] ?? 0;  // Use $day instead of $today->day
+
         return view('dashboard', compact(
             'boats',
             'operationalBoats',
@@ -115,7 +128,8 @@ class DashboardController extends Controller
             'guestPassengersCount',
             'registeredPassengersCount',
             'todayMaleCount',
-            'todayFemaleCount'
+            'todayFemaleCount',
+            'activeStationsToday'  // Add the active stations to the view
         ));
     }
 }

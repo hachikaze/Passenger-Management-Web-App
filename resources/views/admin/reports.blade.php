@@ -168,7 +168,7 @@
                     <thead class="bg-gray-50 sticky top-0">
                         <tr class="bg-gray-100">
                             <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Boat Name</th>
-                            <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Total Passengers</th>
+                            <th class="px-3 py-1 text-center text-xs font-normal text-gray-500 uppercase tracking-wider">Total Passengers</th>
                             <th class="px-3 py-1 text-left text-xs font-normal text-gray-500 uppercase tracking-wider">Last Trip Date</th>
                         </tr>
                     </thead>
@@ -176,7 +176,7 @@
                         @foreach($boats as $boat)
                             <tr class="hover:bg-gray-100">
                                 <td class="px-3 py-2 text-xs text-gray-900 border-r border-gray-200">{{ $boat->boat_name }}</td>
-                                <td class="px-3 py-2 text-xs text-gray-900 border-r border-gray-200">{{ $boat->total_passengers }}</td>
+                                <td class="px-3 py-2 text-center text-xs text-gray-900 border-r border-gray-200">{{ $boat->total_passengers }}</td>
                                 <td class="px-3 py-2 text-xs text-gray-900 border-r border-gray-200">{{ $boat->last_trip_date }}</td>
                             </tr>
                         @endforeach

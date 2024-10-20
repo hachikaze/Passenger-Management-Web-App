@@ -6,7 +6,6 @@ use App\Mail\ForgotPassword;
 use App\Models\ResetToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -18,6 +17,22 @@ class ForgotPasswordController extends Controller
 {
     public function forgotPassword() {
         return view('forgot-password.forgot-password');
+    }
+
+    private function sendPasswordResetLink($email) {
+        $token = Str::random(64);
+    
+        ResetToken::insert([
+            'email' => $email,
+            'token' => $token,
+            'created_at' => Carbon::now()
+        ]);
+    
+        try {
+            Mail::to($email)->send(new ForgotPassword($token));
+        } catch (\Exception $e) {
+            return redirect()->route('forgot-password')->with('error', 'Failed to send email. Please try again.');
+        }
     }
 
     public function forgotPasswordPost(Request $request) {
@@ -47,27 +62,6 @@ class ForgotPasswordController extends Controller
         $this->sendPasswordResetLink($email);
 
         return redirect()->route('forgot-password')->with('success', 'Password reset link has been resent.');
-    }
-
-    private function sendPasswordResetLink($email) {
-        $token = Str::random(64);
-
-        $user = ResetToken::insert([
-            'email' => $email,
-            'token' => $token,
-            'created_at' => Carbon::now()
-        ]);
-
-        try {
-            //Mail::send('mail.password-reset-link', ['token' => $token], function ($message) use ($email) {
-            //    $message->to($email);
-            //    $message->subject('Reset Password');
-            //});
-
-            Mail::to($email)->send(new ForgotPassword($token));
-        } catch (\Exception $e) {
-            return redirect()->route('forgot-password')->with('error', 'Failed to send email. Please try again.');
-        }
     }
 
     public function resetPassword($token)

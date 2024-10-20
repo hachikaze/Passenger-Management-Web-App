@@ -7,14 +7,21 @@ use App\Models\BoatStatusLog;
 use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BoatController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Get today's date
-        $today = Carbon::now()->format('Y-m-d');
-        
+        $year = $request->input('year', now()->year);
+        $month = $request->input('month', now()->month);
+
+        // Get total number of boats
+        $totalBoats = Boat::count();
+
+        // Get today's date to check for past and present days only
+        $today = now();
+
         // Get the last date status was updated (assuming you store it in a 'settings' or similar table)
         $lastUpdateDate = Setting::where('key', 'last_boat_status_update')->value('value');
 
@@ -32,8 +39,61 @@ class BoatController extends Controller
             );
         }
 
+        // Retrieve boat status counts by day for the given month and year
+        $boatCountsByDay = BoatStatusLog::whereYear('date', $year)
+            ->whereMonth('date', $month)
+            ->select(
+                DB::raw("EXTRACT(DAY FROM date) as day"),
+                DB::raw("SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active_count"),
+                DB::raw("SUM(CASE WHEN status = 'MAINTENANCE' THEN 1 ELSE 0 END) as maintenance_count")
+            )
+            ->groupBy('day')
+            ->orderBy('day')
+            ->get();
+
+        // Prepare data for each day of the month
+        $daysInMonth = Carbon::create($year, $month)->daysInMonth;
+        $dailyData = [];
+
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $currentDate = Carbon::create($year, $month, $day);
+            $statusCounts = $boatCountsByDay->firstWhere('day', $day);
+
+            // Assign values from the query or set them to 0 if not found
+            $activeCount = $statusCounts->active_count ?? 0;
+            $maintenanceCount = $statusCounts->maintenance_count ?? 0;
+
+            // Set counts to 0 for future days
+            if ($currentDate->greaterThan($today)) {
+                $activeCount = 0;
+                $maintenanceCount = 0;
+            }
+
+            $inactiveCount = $totalBoats - $activeCount - $maintenanceCount;
+
+            // Store the data for this day
+            $dailyData[] = [
+                'day' => $day,
+                'active_count' => $activeCount,
+                'inactive_count' => $inactiveCount,
+                'maintenance_count' => $maintenanceCount,
+            ];
+        }
+
+        // Sorting logic
+        $sort = $request->input('sort', 'date'); // Default sort by date
+        $direction = $request->input('direction', 'asc'); // Default sort direction is ascending
+
+        // Retrieve sorted boat status logs
+        $statusLogs = BoatStatusLog::whereYear('date', $year)
+            ->whereMonth('date', $month)
+            ->orderBy($sort, $direction)
+            ->get();
+
+        // Fetch all boats to display in the view
         $boats = Boat::all();
-        return view('boats', compact('boats'));
+
+        return view('boats', compact('dailyData', 'year', 'month', 'boats', 'statusLogs'));
     }
 
     public function updateStatus(Request $request)
