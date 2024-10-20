@@ -30,9 +30,16 @@
         }
 
         .report-title {
-            font-size: 15px;
+            font-size: 12px;
             font-weight: bold;
-            margin-top: 5px;
+            margin-top: 3px;
+            text-align: center;
+        }
+
+        .report-title p {
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 2px;
             text-align: center;
         }
 
@@ -104,6 +111,9 @@
 
     <div class="report-title">
         <h2>Manifest Report</h2>
+        <p>
+            <strong>Date:</strong> {{ \Carbon\Carbon::parse($selectedDate)->format('F j, Y') }}
+        </p>
     </div>
 
     <div class="container">
