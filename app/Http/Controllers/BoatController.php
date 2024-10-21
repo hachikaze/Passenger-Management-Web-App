@@ -22,23 +22,6 @@ class BoatController extends Controller
         // Get today's date to check for past and present days only
         $today = now();
 
-        // Get the last date status was updated (assuming you store it in a 'settings' or similar table)
-        $lastUpdateDate = Setting::where('key', 'last_boat_status_update')->value('value');
-
-        // Check if the status has already been updated today
-        if ($lastUpdateDate !== $today) {
-            // Find all active boats except those under maintenance
-            Boat::where('status', 'ACTIVE')
-                ->where('status', '!=', 'MAINTENANCE')
-                ->update(['status' => 'INACTIVE']);
-            
-            // Update the last status update date in the settings
-            Setting::updateOrCreate(
-                ['key' => 'last_boat_status_update'],
-                ['value' => $today]
-            );
-        }
-
         // Retrieve boat status counts by day for the given month and year
         $boatCountsByDay = BoatStatusLog::whereYear('date', $year)
             ->whereMonth('date', $month)
