@@ -27,14 +27,17 @@ class ReportsController extends Controller
         $month = $request->input('month', Carbon::now()->month); // Default to current month
         $selectedDate = $request->input('date', Carbon::now()->format('Y-m-d'));  // Default to current date
 
+        // Fetch the boats and their passenger data for the selected date
         $boats = Boat::leftJoin('ridership', function ($join) use ($selectedDate) {
             $join->on('boats.id', '=', 'ridership.boat_id')
                 ->whereDate('ridership.created_at', $selectedDate); // Filter by selected date
         })
-        ->select('boats.id', 'boats.boat_name', 
+        ->select(
+            'boats.id', 
+            'boats.boat_name', 
             DB::raw('COUNT(ridership.id) as total_passengers'),
-            DB::raw('MAX(ridership.created_at) as last_trip_date'),
-            )
+            DB::raw('MAX(ridership.created_at) as last_trip_date')
+        )
         ->groupBy('boats.id', 'boats.boat_name')
         ->get();
 
@@ -191,8 +194,8 @@ class ReportsController extends Controller
         foreach ($dailyRidershipData as $data) {
             $day = (int) $data->day;
 
-            // Only accumulate totals if there's ridership on the current day
-            if ($day <= $currentDate && $data->total > 0) {
+            // Accumulate the total if ridership exists
+            if ($data->total > 0) {
                 $cumulativeTotal += $data->total;
             }
 
@@ -204,7 +207,8 @@ class ReportsController extends Controller
                 'date' => $day,
                 'ridership' => $data->total,
                 'boats' => $activeBoatsCount,
-                'month_to_date' => ($data->total > 0 && $day <= $currentDate) ? $cumulativeTotal : 0, // Only accumulate if ridership is greater than 0, otherwise set to 0
+                // Always display cumulative total if ridership exists
+                'month_to_date' => $cumulativeTotal,
                 'stations' => $stationsCount,
                 'male_passengers' => $data->male_count,
                 'female_passengers' => $data->female_count,
@@ -220,12 +224,12 @@ class ReportsController extends Controller
                 $activeBoatsCount = $activeBoatsByDay[$day] ?? 0;
                 $stationsCount = $stationsByDay[$day] ?? 0;
 
-                // Set month_to_date to 0 for days with no ridership or future days
+                // Set month_to_date to 0 for missing days with no ridership
                 $dailyData[$day] = [
                     'date' => $day,
                     'ridership' => 0,
                     'boats' => $activeBoatsCount,
-                    'month_to_date' => 0, // Ensure it's explicitly 0 for missing or no-ridership days
+                    'month_to_date' => 0,
                     'stations' => $stationsCount,
                     'male_passengers' => 0,
                     'female_passengers' => 0,
@@ -725,49 +729,55 @@ class ReportsController extends Controller
     
         // Initialize daily ridership data and calculate cumulative total
         $dailyData = [];
-        $cumulativeTotal = 0;
-    
+        $cumulativeTotal = 0; // Ensure this is initialized correctly
+
+        // Build daily data and calculate cumulative total for each day
         foreach ($dailyRidershipData as $data) {
             $day = (int) $data->day;
-            if ($day <= $currentDate) {
+
+            // Accumulate the total if ridership exists
+            if ($data->total > 0) {
                 $cumulativeTotal += $data->total;
             }
-    
+
             $activeBoatsCount = $activeBoatsByDay[$day] ?? 0;
             $stationsCount = $stationsByDay[$day] ?? 0;
-    
+
+            // Populate the daily data for the given day
             $dailyData[$day] = [
                 'date' => $day,
                 'ridership' => $data->total,
                 'boats' => $activeBoatsCount,
-                'month_to_date' => ($day <= $currentDate) ? $cumulativeTotal : 0,
+                // Always display cumulative total if ridership exists
+                'month_to_date' => $cumulativeTotal,
                 'stations' => $stationsCount,
                 'male_passengers' => $data->male_count,
                 'female_passengers' => $data->female_count,
             ];
         }
-    
+
         ksort($dailyData);
-    
+
         // Fill in missing days in the month
         $daysInMonth = Carbon::create($year, $month, 1)->daysInMonth;
         for ($day = 1; $day <= $daysInMonth; $day++) {
             if (!isset($dailyData[$day])) {
                 $activeBoatsCount = $activeBoatsByDay[$day] ?? 0;
                 $stationsCount = $stationsByDay[$day] ?? 0;
-    
+
+                // Set month_to_date to 0 for missing days with no ridership
                 $dailyData[$day] = [
                     'date' => $day,
                     'ridership' => 0,
                     'boats' => $activeBoatsCount,
-                    'month_to_date' => ($day <= $currentDate) ? $cumulativeTotal : 0,
+                    'month_to_date' => 0,
                     'stations' => $stationsCount,
                     'male_passengers' => 0,
                     'female_passengers' => 0,
                 ];
             }
         }
-    
+
         ksort($dailyData);
     
         // Load the view with data and convert it to a PDF

@@ -91,6 +91,17 @@
                         </svg>
                         <span class="mx-3 font-medium">Users</span>
                     </x-nav-link>
+
+                    <x-nav-link href="/schedules" :active="request()->is('schedules')" class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="#9ca3af" viewBox="0 0 24 24" class="w-5 h-5">
+                            <g id="SVGRepo_bgCarrier" stroke-width="2"></g>
+                            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                            <g id="SVGRepo_iconCarrier">
+                                <path fill-opacity="1" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"></path>
+                            </g>
+                        </svg>
+                        <span class="mx-3 font-medium">Schedules</span>
+                    </x-nav-link>
                     @endcan
 
                     {{-- Logout --}}

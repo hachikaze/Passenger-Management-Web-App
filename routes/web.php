@@ -9,6 +9,7 @@ use App\Http\Controllers\FerryAideLocationController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\RegisteredUserController;
 use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\UserController;
 use App\Models\Boat;
@@ -49,7 +50,6 @@ Route::middleware(['auth', 'verified', PreventBackHistory::class])->group(functi
     Route::get('/fetch-passenger-details', [ReportsController::class, 'fetchPassengerDetails'])->name('fetchPassengerDetails');
     Route::get('/reports/search', [ReportsController::class, 'liveSearch'])->name('reports.search');
 
-
     Route::get('/export-csv', [ReportsController::class, 'exportDailyCsv'])->name('export.csv');
     Route::get('/reports/export-csv', [ReportsController::class, 'exportCsv']);
     Route::get('/reports/export-weekly-csv', [ReportsController::class, 'exportWeeklyCsv']);
@@ -63,6 +63,11 @@ Route::middleware(['auth', 'verified', PreventBackHistory::class])->group(functi
     Route::patch('/users/update-user-type', [UserController::class, 'update'])->name('update-user-type');
     Route::patch('/user/update-station', [UserController::class, 'updateAssignedStation'])->name('update-assigned-station');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('delete-user');
+
+    // FOR SCHEDULE
+    Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules');
+    Route::get('/schedules/time-ranges/{station}', [ScheduleController::class, 'getTimeRanges']);
+    Route::post('/schedules/update-time-range', [ScheduleController::class, 'updateTimeRange'])->name('schedules.updateTimeRange');
 
     // FOR REGISTER
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');

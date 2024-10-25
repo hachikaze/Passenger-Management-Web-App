@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Ridership;
 use Illuminate\Support\Facades\DB;
 
 class RidershipSeeder extends Seeder
@@ -15,26 +14,28 @@ class RidershipSeeder extends Seeder
      */
     public function run()
     {
+        // Passenger counts per station for January 7, 2023
         $stations = [
-            'Guadalupe' => 95,
-            'Hulo' => 49,
-            'Valenzuela' => 0,
-            'Lambingan' => 15,
-            'Sta.Ana' => 12,
-            'PUP' => 3,
-            'Quinta' => 40,
-            'Lawton' => 15,
-            'Escolta' => 67,
-            'Maybunga' => 6,
-            'San Joaquin' => 23,
-            'Kalawaan' => 14,
-            'Pinagbuhatan' => 81,
+            'Guadalupe' => 350,
+            'Hulo' => 90,
+            'Valenzuela' => 15,
+            'Lambingan' =>  26,
+            'Sta.Ana' => 23,
+            'PUP' => 0,
+            'Quinta' => 118,
+            'Lawton' => 31,
+            'Escolta' => 177,
+            'Maybunga' => 0,
+            'San Joaquin' => 3,
+            'Kalawaan' => 11,
+            'Pinagbuhatan' => 35,
         ];
 
-        $studentCount = 85;
-        $seniorCount = 52;
+        $totalStudents = 210;  // Total number of students
+        $totalSeniors = 115;    // Total number of seniors
+        $totalPassengers = 0; // Total passenger count (all professions)
 
-        // Function to generate a passenger
+        // Function to generate a passenger entry
         function generatePassenger($origin, $profession)
         {
             return [
@@ -44,35 +45,40 @@ class RidershipSeeder extends Seeder
                 'address' => fake()->address(),
                 'contact_number' => fake()->phoneNumber(),
                 'profession' => $profession,
-                'age' => ($profession === 'Student') ? fake()->numberBetween(18, 25) : fake()->numberBetween(60, 80),
+                'age' => ($profession === 'Student') ? fake()->numberBetween(18, 25) :
+                        (($profession === 'Senior') ? fake()->numberBetween(60, 80) : fake()->numberBetween(26, 59)),
                 'gender' => fake()->randomElement(['Male', 'Female']),
                 'origin' => $origin,
                 'destination' => 'Kalawaan',
-                'created_at' => '2023-01-05',
+                'created_at' => '2024-01-31', 
                 'updated_at' => now(),
                 'is_guest' => 'true',
             ];
         }
 
         $passengers = [];
-        $remainingStudents = $studentCount;
-        $remainingSeniors = $seniorCount;
+        $remainingStudents = $totalStudents;
+        $remainingSeniors = $totalSeniors;
 
-        // Iterate through each station and generate the required number of passengers
+        // Generate the passengers for each station
         foreach ($stations as $origin => $count) {
             for ($i = 0; $i < $count; $i++) {
-                // If we still have students to assign, use 'Student'; otherwise, use 'Senior'
                 if ($remainingStudents > 0) {
+                    // Assign student if available
                     $passengers[] = generatePassenger($origin, 'Student');
                     $remainingStudents--;
                 } elseif ($remainingSeniors > 0) {
+                    // Assign senior if available
                     $passengers[] = generatePassenger($origin, 'Senior');
                     $remainingSeniors--;
+                } else {
+                    // Assign other passengers if no more students/seniors are left
+                    $passengers[] = generatePassenger($origin, 'Other');
                 }
             }
         }
 
-        // Insert the generated passengers into the database
+        // Insert all passengers into the ridership table
         DB::table('ridership')->insert($passengers);
     }
 }

@@ -13,6 +13,27 @@ class BoatController extends Controller
 {
     public function index(Request $request)
     {
+        // Get today's date and the last status update date from settings
+        $lastUpdateDate = Carbon::parse(
+            Setting::where('key', 'last_boat_status_update')->value('value')
+        )->format('Y-m-d');
+        $today = now()->format('Y-m-d');
+
+        // Check if the status has already been updated today
+        if ($lastUpdateDate !== $today) {
+            // Find all active boats except those under maintenance
+            Boat::where('status', 'ACTIVE')
+                ->whereNot('status', 'MAINTENANCE')
+                ->update(['status' => 'INACTIVE']);
+
+            // Update the last status update date in the settings
+            Setting::updateOrCreate(
+                ['key' => 'last_boat_status_update'],
+                ['value' => now()->format('Y-m-d')] // Store only the date
+            );
+        }
+
+        // Retrieve input parameters for year and month (defaults to current year/month)
         $year = $request->input('year', now()->year);
         $month = $request->input('month', now()->month);
 

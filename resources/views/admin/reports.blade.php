@@ -162,6 +162,14 @@
     </div>
 
     <div class="items-center my-6 mx-5 p-2 bg-gray-200 shadow-md rounded-md">
+        <div class="flex justify-center">
+            <h2 class="text-lg font-bold mb-2">BOAT PASSENGER SUMMARY</h2>
+        </div>
+
+        <p class="text-xs text-gray-600 mb-4 text-center">
+            This table provides an overview of various boats, including the total number of passengers for each and the date of their last recorded trip.
+        </p>
+
         <div class="flex-1 p-1 bg-white rounded-md shadow-md">
             <div class="max-h-96 overflow-y-auto">
                 <table class="min-w-full divide-y divide-gray-200">
