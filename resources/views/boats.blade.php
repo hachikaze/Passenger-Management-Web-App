@@ -108,6 +108,8 @@
 
                     <form action="{{ route('add-boat') }}" method="POST" id="addBoatForm">
                         @csrf
+                        <input type="hidden" name="in_use" value="false">
+                        
                         <tr id="placeholderRow" style="display: none;">
                             <td colspan="6" class="px-6 py-4"></td>
                         </tr>

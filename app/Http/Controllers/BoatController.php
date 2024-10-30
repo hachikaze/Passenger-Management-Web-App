@@ -122,15 +122,26 @@ class BoatController extends Controller
     public function addBoat(Request $request)
     {
         $attributes = $request->validate([
-            'boat_name' => ['required', function($attribute, $value, $fail) {
-                if ($value !== strtoupper($value)) {
-                    $fail('The BOAT NAME must be in all capital letters.');
+            'boat_name' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    if ($value !== strtoupper($value)) {
+                        $fail('The BOAT NAME must be in all capital letters.');
+                    }
                 }
-            }],
-            'max_capacity' => ['required'],
-            'status' => ['required', 'in:ACTIVE,NOT ACTIVE,UNDER REPAIR']
+            ],
+            'max_capacity' => ['required', 'integer'],
+            'status' => ['required', 'in:ACTIVE,NOT ACTIVE,UNDER REPAIR'],
         ]);
 
+        // Ensure 'in_use' is explicitly set to boolean false
+        $attributes['in_use'] = 'false';
+
+        // Initialize 'occupied_seats' to 0 and 'available_seats' to max_capacity
+        $attributes['occupied_seats'] = 0;
+        $attributes['available_seats'] = $attributes['max_capacity'];
+
+        // Save the boat with the provided and modified attributes
         $boat = new Boat($attributes);
         $boat->save();
 
