@@ -129,21 +129,6 @@
                                     </g>
                                 </svg>
                             </button>
-
-                            <!-- Delete Button (Initially Hidden) -->
-                            <form id="deleteForm-{{ $user->id }}" action="{{ route('delete-user', $user->id) }}" method="POST" class="inline-block delete-form" style="display: none;">
-                                @csrf
-                                @method('DELETE')
-                                <button class="ml-2 px-2 py-1 bg-white rounded-md text-white delete-button" onclick="showDeleteConfirmation('{{ $user->id }}', event)" style="display: none;">
-                                    <svg viewBox="0 0 1024 1024" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="#000000">
-                                        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                                        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-                                        <g id="SVGRepo_iconCarrier">
-                                            <path fill="#ff0033" d="M160 256H96a32 32 0 0 1 0-64h256V95.936a32 32 0 0 1 32-32h256a32 32 0 0 1 32 32V192h256a32 32 0 1 1 0 64h-64v672a32 32 0 0 1-32 32H192a32 32 0 0 1-32-32V256zm448-64v-64H416v64h192zM224 896h576V256H224v640zm192-128a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32zm192 0a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32z"></path>
-                                        </g>
-                                    </svg>
-                                </button>
-                            </form>
                         </td>
                     </tr>
                 @endforeach
@@ -250,16 +235,6 @@
                 <button class="p-2 bg-gray-500 rounded-md text-white hover:bg-gray-700" onclick="hideModal('updateAssignedStationModal-{{ $user->id }}')">No</button>
             </div>
         </x-modal-layout>
-
-        <!-- Delete Confirmation Modal -->
-        <x-modal-layout id="deleteConfirmationModal-{{ $user->id }}" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
-            <h2 class="text-xl font-bold mb-4">Confirm Delete</h2>
-            <p class="mb-4">Are you sure you want to delete the user {{ $user->first_name }} {{ $user->last_name }}?</p>
-            <div class="flex justify-end">
-                <button class="p-2 bg-red-500 rounded-md text-white mr-2 hover:bg-red-700" onclick="confirmDelete('{{ $user->id }}', event)">Yes</button>
-                <button class="p-2 bg-gray-500 rounded-md text-white hover:bg-gray-700" onclick="hideModal('deleteConfirmationModal-{{ $user->id }}')">No</button>
-            </div>
-        </x-modal-layout>
     @endforeach
 
     <script>
@@ -273,8 +248,6 @@
             const saveUserTypeButton = row.querySelector('.save-user-type-button');
             const saveStationButton = row.querySelector('.save-station-button');
             const cancelButton = row.querySelector('.cancel-button');
-            const deleteForm = row.querySelector('.delete-form'); // Get the delete form
-            const deleteButton = row.querySelector('.delete-button'); // Get the delete button
 
             // Enable fields and show respective save button
             if (userTypeSelect.disabled) {
@@ -287,8 +260,6 @@
             }
 
             cancelButton.style.display = 'inline-block';
-            deleteForm.style.display = 'inline-block'; // Show the delete form
-            deleteButton.style.display = 'inline-block'; // Show the delete button
             button.style.display = 'none'; // Hide the edit button
         }
 
@@ -300,7 +271,6 @@
             const saveUserTypeButton = row.querySelector('.save-user-type-button');
             const saveStationButton = row.querySelector('.save-station-button');
             const editButton = row.querySelector('.edit-button');
-            const deleteButton = row.querySelector('.delete-button'); // Get the delete button
 
             // Reset to original values
             userTypeSelect.value = userTypeSelect.getAttribute('data-original-value');
@@ -315,7 +285,6 @@
             saveStationButton.style.display = 'none';
             button.style.display = 'none'; // Hide the cancel button
             editButton.style.display = 'inline-block'; // Show the edit button
-            deleteButton.style.display = 'none'; // Hide the delete button after cancel
         }
 
         // Show the update confirmation modal for a specific user
@@ -333,18 +302,6 @@
 
             // Show the confirmation modal for updating the user
             const modal = document.getElementById('updateAssignedStationModal-' + id);
-            modal.classList.remove('hidden');
-        }
-
-        // Show the delete confirmation modal for a specific user
-        function showDeleteConfirmation(id) {
-            userIdToUpdate = id; // Store the user ID to delete
-
-            // Prevent default form submission
-            event.preventDefault(); 
-
-            // Show the confirmation modal for deleting the user
-            const modal = document.getElementById('deleteConfirmationModal-' + id);
             modal.classList.remove('hidden');
         }
 
@@ -368,13 +325,6 @@
             } else {
                 console.error('Form not found for assigned station update: ', id);
             }
-        }
-
-        // Confirm and submit the delete action
-        function confirmDelete(id, event) {
-            event.preventDefault(); // Prevent default form submission behavior
-            let form = document.getElementById('deleteForm-' + id);
-            form.submit(); // Manually submit the form after confirmation
         }
     </script>
 </x-sidebar-layout>

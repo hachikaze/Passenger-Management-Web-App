@@ -314,6 +314,30 @@ class ReportsController extends Controller
         $previousWeekDateRange = $previousWeekStart->format('M d') . ' - ' . $previousWeekEnd->format('M d, Y');
         $currentWeekDateRange = $currentWeekStart->format('M d') . ' - ' . $currentWeekEnd->format('M d, Y');
 
+        $previousWeekBreakdown = Ridership::selectRaw('DATE(created_at) as date,
+            COUNT(*) as ridership,
+            SUM(CASE WHEN gender = \'male\' THEN 1 ELSE 0 END) as male,
+            SUM(CASE WHEN gender = \'female\' THEN 1 ELSE 0 END) as female,
+            SUM(CASE WHEN profession ILIKE \'%student%\' THEN 1 ELSE 0 END) as student,
+            SUM(CASE WHEN profession ILIKE \'%senior citizen%\' THEN 1 ELSE 0 END) as senior,
+            SUM(CASE WHEN profession NOT ILIKE \'%student%\' AND profession NOT ILIKE \'%senior citizen%\' THEN 1 ELSE 0 END) as other')
+            ->whereBetween('created_at', [$previousWeekStart, $previousWeekEnd])
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        $currentWeekBreakdown = Ridership::selectRaw('DATE(created_at) as date,
+            COUNT(*) as ridership,
+            SUM(CASE WHEN gender = \'male\' THEN 1 ELSE 0 END) as male,
+            SUM(CASE WHEN gender = \'female\' THEN 1 ELSE 0 END) as female,
+            SUM(CASE WHEN profession ILIKE \'%student%\' THEN 1 ELSE 0 END) as student,
+            SUM(CASE WHEN profession ILIKE \'%senior citizen%\' THEN 1 ELSE 0 END) as senior,
+            SUM(CASE WHEN profession NOT ILIKE \'%student%\' AND profession NOT ILIKE \'%senior citizen%\' THEN 1 ELSE 0 END) as other')
+            ->whereBetween('created_at', [$currentWeekStart, $currentWeekEnd])
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
         return view('admin.reports', compact(
             'monthlyData', 
             'ridershipData', 
@@ -332,7 +356,9 @@ class ReportsController extends Controller
             'years',
             'totals',
             'stationData',
-            'boats'
+            'boats',
+            'currentWeekBreakdown',
+            'previousWeekBreakdown'
         ));
     }
 

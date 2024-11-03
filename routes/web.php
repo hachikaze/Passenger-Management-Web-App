@@ -62,7 +62,6 @@ Route::middleware(['auth', 'verified', PreventBackHistory::class])->group(functi
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::patch('/users/update-user-type', [UserController::class, 'update'])->name('update-user-type');
     Route::patch('/user/update-station', [UserController::class, 'updateAssignedStation'])->name('update-assigned-station');
-    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('delete-user');
 
     // FOR SCHEDULE
     Route::get('/schedules', [ScheduleController::class, 'index'])->name('schedules');

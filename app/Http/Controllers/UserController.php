@@ -82,16 +82,4 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'Failed to update assigned station.');
         }
     }
-    
-    public function destroy(User $user)
-    {
-        if ($user) {
-            // The activity logs should be deleted automatically due to cascade delete
-            $user->delete();
-
-            return redirect()->route('users.index')->with('success', 'User deleted successfully.');
-        }
-
-        return redirect()->route('users.index')->with('error', 'User not found.');
-    }
 }

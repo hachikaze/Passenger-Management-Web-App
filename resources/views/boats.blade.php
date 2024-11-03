@@ -89,19 +89,7 @@
                                     </g>
                                 </svg>
                             </button>
-                                <form id="deleteForm-{{ $boat->id }}" action="{{ route('delete-boat', $boat->id) }}" method="POST" class="inline-block delete-form" style="display: none;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button" class="px-2 py-1 bg-white rounded-md text-white delete-button" onclick="showDeleteConfirmation('{{ $boat->id }}')">
-                                        <svg viewBox="0 0 1024 1024" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="#000000">
-                                            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-                                            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-                                            <g id="SVGRepo_iconCarrier">
-                                                <path fill="#ff0033" d="M160 256H96a32 32 0 0 1 0-64h256V95.936a32 32 0 0 1 32-32h256a32 32 0 0 1 32 32V192h256a32 32 0 1 1 0 64h-64v672a32 32 0 0 1-32 32H192a32 32 0 0 1-32-32V256zm448-64v-64H416v64h192zM224 896h576V256H224v640zm192-128a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32zm192 0a32 32 0 0 1-32-32V416a32 32 0 0 1 64 0v320a32 32 0 0 1-32 32z"></path>
-                                            </g>
-                                        </svg>
-                                    </button>
-                                </form>
+        
                             </td>
                         </tr>
                     @endforeach
@@ -270,16 +258,6 @@
                 <button class="p-2 bg-gray-500 rounded-md text-white hover:bg-gray-700" onclick="hideModal('updateConfirmationModal-{{ $boat->id }}')">No</button>
             </div>
         </x-modal-layout>
-
-        <!-- Delete Confirmation Modal -->
-        <x-modal-layout id="deleteConfirmationModal-{{ $boat->id }}" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
-            <h2 class="text-xl font-bold mb-4">Confirm Delete</h2>
-            <p class="mb-4">Are you sure you want to delete this boat?</p>
-            <div class="flex justify-end">
-                <button class="p-2 bg-red-500 rounded-md text-white mr-2 hover:bg-red-700" onclick="confirmDelete('{{ $boat->id }}')">Yes</button>
-                <button class="p-2 bg-gray-500 rounded-md text-white hover:bg-gray-700" onclick="hideModal('deleteConfirmationModal-{{ $boat->id }}')">No</button>
-            </div>
-        </x-modal-layout>
     @endforeach
 
     <!-- Save Confirmation Modal -->
@@ -299,13 +277,11 @@
             let editButton = row.querySelector('.edit-button');
             let saveButton = row.querySelector('form .save-button');
             let cancelButton = row.querySelector('.cancel-button');
-            let deleteForm = row.querySelector('.delete-form');
 
             select.disabled = false;
             saveButton.style.display = 'inline-block';
             editButton.style.display = 'none';
             cancelButton.style.display = 'inline-block';
-            deleteForm.style.display = 'inline-block';
         }
 
         function cancelEdit(button, id) {
@@ -314,14 +290,12 @@
             let editButton = row.querySelector('.edit-button');
             let saveButton = row.querySelector('form .save-button');
             let cancelButton = row.querySelector('.cancel-button');
-            let deleteForm = row.querySelector('.delete-form');
 
             select.value = select.getAttribute('data-original-value');
             select.disabled = true;
             saveButton.style.display = 'none';
             editButton.style.display = 'inline-block';
             cancelButton.style.display = 'none';
-            deleteForm.style.display = 'none';
         }
 
         function toggleAddBoatRow() {
@@ -354,10 +328,6 @@
             showModal('updateConfirmationModal-' + id);
         }
 
-        function showDeleteConfirmation(id) {
-            showModal('deleteConfirmationModal-' + id);
-        }
-
         function confirmUpdate(id) {
             let form = document.getElementById('updateStatusForm-' + id);
             form.submit();
@@ -379,11 +349,6 @@
         document.getElementById('cancelSaveButton').addEventListener('click', function() {
             document.getElementById('saveConfirmationModal').classList.add('hidden');
         });
-        
-        function confirmDelete(id) {
-            let form = document.getElementById('deleteForm-' + id);
-            form.submit();
-        }
 
         // Add this function to handle status color change
         function updateDropdownColor(select) {

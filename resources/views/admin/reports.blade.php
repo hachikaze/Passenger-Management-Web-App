@@ -290,7 +290,7 @@
             This report provides a comparison of accomplishments between the previous and current weeks, highlighting changes in quantity and percentage variance.
         </p>
 
-        <table class="min-w-full bg-white shadow-md rounded-md">
+        <table class="min-w-full bg-white shadow-md rounded-md mb-6">
             <thead class="bg-gray-100">
                 <tr>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Previous Week ({{ $previousWeekDateRange }})</th>
@@ -308,6 +308,70 @@
                 </tr>
             </tbody>
         </table>
+
+        <div class="grid grid-cols-2 gap-4">
+            <!-- Previous Week Breakdown Table -->
+            <div class="bg-white shadow-md rounded-md p-2">
+                <h3 class="text-sm font-bold mb-4 text-gray-700">Previous Week Breakdown</h3>
+                <table class="min-w-full">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day</th>
+                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ridership</th>
+                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
+                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
+                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Senior</th>
+                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Regular</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($previousWeekBreakdown as $day)
+                        <tr class="border-b">
+                            <td class="px-3 py-2 text-sm text-gray-700">{{ \Carbon\Carbon::parse($day->date)->format('l') }}</td>
+                            <td class="px-3 py-2 text-center text-sm text-gray-700">{{ $day->ridership }}</td>
+                            <td class="px-3 py-2 text-center text-sm text-gray-700">{{ $day->male }}</td>
+                            <td class="px-3 py-2 text-center text-sm text-gray-700">{{ $day->female }}</td>
+                            <td class="px-3 py-2 text-center text-sm text-gray-700">{{ $day->student }}</td>
+                            <td class="px-3 py-2 text-center text-sm text-gray-700">{{ $day->senior }}</td>
+                            <td class="px-3 py-2 text-center text-sm text-gray-700">{{ $day->other }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Current Week Breakdown Table -->
+            <div class="bg-white shadow-md rounded-md p-2">
+                <h3 class="text-sm font-bold mb-4 text-gray-700">Current Week Breakdown</h3>
+                <table class="min-w-full">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day</th>
+                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ridership</th>
+                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
+                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
+                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Senior</th>
+                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Regular</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($currentWeekBreakdown as $day)
+                        <tr class="border-b">
+                            <td class="px-3 py-2 text-sm text-gray-700">{{ \Carbon\Carbon::parse($day->date)->format('l') }}</td>
+                            <td class="px-3 py-2 text-center text-sm text-gray-700">{{ $day->ridership }}</td>
+                            <td class="px-3 py-2 text-center text-sm text-gray-700">{{ $day->male }}</td>
+                            <td class="px-3 py-2 text-center text-sm text-gray-700">{{ $day->female }}</td>
+                            <td class="px-3 py-2 text-center text-sm text-gray-700">{{ $day->student }}</td>
+                            <td class="px-3 py-2 text-center text-sm text-gray-700">{{ $day->senior }}</td>
+                            <td class="px-3 py-2 text-center text-sm text-gray-700">{{ $day->other }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
         <button id="exportWeeklyCsvBtn" class="mt-4 bg-green-500 hover:bg-green-700 transition duration-300 text-sm text-white px-2 py-1 rounded-md">
             Export CSV
@@ -405,18 +469,18 @@
         <div class="flex space-x-2">
             <div class="flex-1 p-1 bg-white rounded-md shadow-md">
                 <div class="bg-white rounded-md">
-                    <div class="flex items-center justify-end mb-2">
+                <!--<div class="flex items-center justify-end mb-2">
                         <div class="flex items-center space-x-3">
                             <p class="text-sm">Download:</p>
                             <button id="exportCsvBtn" class="bg-green-500 hover:bg-green-700 transition duration-300 text-white px-2 py-1 text-sm rounded-md ml-4">
                                 CSV
                             </button>
-                            <!-- Updated PDF Download Link -->
+
                             <a id="pdfDownloadLink" href="#" class="px-2 py-1 bg-red-500 hover:bg-red-700 transition duration-300 text-sm text-white rounded-md">
                                 PDF
                             </a>
                         </div>
-                    </div>
+                    </div>-->
 
                     <!-- Rest of your table code -->
                     <div class="max-h-72 overflow-y-auto">
@@ -433,13 +497,13 @@
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200" id="">
                                 @foreach($yearlyRidership as $yearData)
-                                    <tr class="hover:bg-gray-100">
-                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-gray-200">{{ $yearData->year  }}</td>
-                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-gray-200">{{ $yearData->total }}</td>
-                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-gray-200">{{ $yearData->student_count }}</td>
-                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-gray-200">{{ $yearData->senior_count }}</td>
-                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-gray-200">{{ $yearData->male_count }}</td>
-                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-gray-200">{{ $yearData->female_count }}</td>
+                                    <tr class="hover:bg-gray-100 border-gray-200">
+                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-b border-gray-200">{{ $yearData->year  }}</td>
+                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-b border-gray-200">{{ $yearData->total }}</td>
+                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-b border-gray-200">{{ $yearData->student_count }}</td>
+                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-b border-gray-200">{{ $yearData->senior_count }}</td>
+                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-b border-gray-200">{{ $yearData->male_count }}</td>
+                                        <td class="px-3 py-2 text-xs text-center text-gray-900 border-r border-b border-gray-200">{{ $yearData->female_count }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
