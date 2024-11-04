@@ -650,13 +650,13 @@ class ReportsController extends Controller
 
     public function exportWeeklyCsv(Request $request)
     {
-        // Get the previous week and current week data
+        // Define the start and end dates for previous and current weeks
         $previousWeekStart = Carbon::now()->subWeek()->startOfWeek();
         $previousWeekEnd = Carbon::now()->subWeek()->endOfWeek();
         $currentWeekStart = Carbon::now()->startOfWeek();
         $currentWeekEnd = Carbon::now()->endOfWeek();
 
-        // Get the date ranges and ridership data
+        // Get the overall ridership data
         $previousWeekData = Ridership::whereBetween('created_at', [$previousWeekStart, $previousWeekEnd])->count();
         $currentWeekData = Ridership::whereBetween('created_at', [$currentWeekStart, $currentWeekEnd])->count();
 
@@ -666,11 +666,68 @@ class ReportsController extends Controller
         $previousWeekDateRange = $previousWeekStart->format('M d') . ' - ' . $previousWeekEnd->format('M d, Y');
         $currentWeekDateRange = $currentWeekStart->format('M d') . ' - ' . $currentWeekEnd->format('M d, Y');
 
-        // Prepare CSV data with columns properly aligned
+        // Prepare CSV data header
         $csvData = [
             ["Previous Week ($previousWeekDateRange)", "Current Week ($currentWeekDateRange)", "Variance Quantity", "Variance Percentage"],
-            [$previousWeekData, $currentWeekData, $varianceQuantity, round($variancePercentage, 2) . "%"]
+            [$previousWeekData, $currentWeekData, $varianceQuantity, round($variancePercentage, 2) . "%"],
+            [],
+            ["Day", "Total Ridership", "Male", "Female", "Student", "Senior", "Regular"]
         ];
+
+        // Fetch breakdown for the previous week
+        $previousWeekBreakdown = Ridership::selectRaw('TO_CHAR(created_at, \'Day\') as day,
+            COUNT(*) as ridership,
+            SUM(CASE WHEN gender = \'male\' THEN 1 ELSE 0 END) as male,
+            SUM(CASE WHEN gender = \'female\' THEN 1 ELSE 0 END) as female,
+            SUM(CASE WHEN profession ILIKE \'%student%\' THEN 1 ELSE 0 END) as student,
+            SUM(CASE WHEN profession ILIKE \'%senior citizen%\' THEN 1 ELSE 0 END) as senior,
+            SUM(CASE WHEN profession NOT ILIKE \'%student%\' AND profession NOT ILIKE \'%senior citizen%\' THEN 1 ELSE 0 END) as regular')
+            ->whereBetween('created_at', [$previousWeekStart, $previousWeekEnd])
+            ->groupByRaw('TO_CHAR(created_at, \'Day\')')
+            ->orderByRaw('TO_CHAR(created_at, \'Day\')')
+            ->get();
+
+        // Fetch breakdown for the current week
+        $currentWeekBreakdown = Ridership::selectRaw('TO_CHAR(created_at, \'Day\') as day,
+            COUNT(*) as ridership,
+            SUM(CASE WHEN gender = \'male\' THEN 1 ELSE 0 END) as male,
+            SUM(CASE WHEN gender = \'female\' THEN 1 ELSE 0 END) as female,
+            SUM(CASE WHEN profession ILIKE \'%student%\' THEN 1 ELSE 0 END) as student,
+            SUM(CASE WHEN profession ILIKE \'%senior citizen%\' THEN 1 ELSE 0 END) as senior,
+            SUM(CASE WHEN profession NOT ILIKE \'%student%\' AND profession NOT ILIKE \'%senior citizen%\' THEN 1 ELSE 0 END) as regular')
+            ->whereBetween('created_at', [$currentWeekStart, $currentWeekEnd])
+            ->groupByRaw('TO_CHAR(created_at, \'Day\')')
+            ->orderByRaw('TO_CHAR(created_at, \'Day\')')
+            ->get();
+
+        // Append Previous Week Breakdown to CSV data
+        $csvData[] = ["Previous Week Breakdown"];
+        foreach ($previousWeekBreakdown as $data) {
+            $csvData[] = [
+                $data->day,
+                $data->ridership,
+                $data->male,
+                $data->female,
+                $data->student,
+                $data->senior,
+                $data->regular
+            ];
+        }
+
+        // Append Current Week Breakdown to CSV data
+        $csvData[] = [];
+        $csvData[] = ["Current Week Breakdown"];
+        foreach ($currentWeekBreakdown as $data) {
+            $csvData[] = [
+                $data->day,
+                $data->ridership,
+                $data->male,
+                $data->female,
+                $data->student,
+                $data->senior,
+                $data->regular
+            ];
+        }
 
         // Return CSV as a response
         return response()->stream(function () use ($csvData) {
