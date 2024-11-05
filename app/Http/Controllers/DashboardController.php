@@ -57,7 +57,7 @@ class DashboardController extends Controller
         // Station breakdown for today
         $stationLabels = [
             'Pinagbuhatan', 'Kalawaan', 'San Joaquin', 'Guadalupe', 'Hulo', 
-            'Valenzuela', 'Lambingan', 'Sta-Ana', 'PUP', 'Quinta', 
+            'Valenzuela', 'Lambingan', 'Sta.Ana', 'PUP', 'Quinta', 
             'Lawton', 'Escolta'
         ];
 
