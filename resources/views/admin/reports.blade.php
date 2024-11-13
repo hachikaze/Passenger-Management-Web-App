@@ -456,6 +456,61 @@
         </div>
     </div>
 
+    <div class="my-6 mx-5 p-2 bg-gray-200 shadow-md rounded-md">
+        <div class="flex justify-center">
+            <h2 class="text-lg font-bold mb-2 text-center">RIDERSHIP TRENDS AND FORECAST</h2>
+        </div>
+
+        <p class="text-xs text-gray-600 mb-4 text-center">
+            This report compares actual ridership data from 2023 with forecasted figures for 2024, illustrating monthly trends and helping to identify seasonal patterns or potential growth areas.
+        </p>
+
+        <div class="flex flex-wrap md:flex-nowrap space-y-4 md:space-y-0 md:space-x-4">
+            <!-- Table Section -->
+            <div class="flex-1 p-4 bg-white rounded-md shadow-md overflow-hidden">
+                <div class="max-h-72 overflow-y-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Month</th>
+                                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">2023 Ridership</th>
+                                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">2024 Actual</th>
+                                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">2024 Prediction</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach ($months as $index => $month)
+                                <tr>
+                                    <td class="px-4 py-2 text-xs text-gray-900 border-r border-gray-200">
+                                        {{ date("F", mktime(0, 0, 0, $month, 1)) }}
+                                    </td>
+                                    <td class="px-4 py-2 text-center text-xs text-gray-900 border-r border-gray-200">
+                                        {{ $ridership[$index] }}
+                                    </td>
+                                    <td class="px-4 py-2 text-center text-xs text-gray-900 border-r border-gray-200">
+                                        {{ $actual2024[$month] > 0 ? $actual2024[$month] : 'N/A' }}
+                                    </td>
+                                    <td class="px-4 py-2 text-center text-xs text-gray-900">
+                                        {{ $predictions[$month] }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="flex-1 p-4 bg-white rounded-md shadow-md">
+                <canvas id="new1"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- <h2>Ridership Prediction Accuracy</h2>
+    <p>Mean Absolute Error (MAE): {{ round($mae, 2) }}</p>
+    <p>Mean Squared Error (MSE): {{ round($mse, 2) }}</p> -->
+
     <div class="items-center my-6 mx-5 p-2 bg-gray-200 shadow-md rounded-md">
         <div class="flex justify-center">
             <h2 class="text-lg font-bold mb-2">YEARLY REPORT</h2>
@@ -464,7 +519,6 @@
         <p class="text-xs text-gray-600 mb-4 text-center">
             This report presents yearly ridership data with breakdowns by students, seniors, and gender.
         </p>
-
 
         <div class="flex space-x-2">
             <div class="flex-1 p-1 bg-white rounded-md shadow-md">
@@ -606,6 +660,80 @@
     
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Actual data for 2023
+        const ridership2023 = [20244, 22921, 28282, 18983, 21361, 20723, 15048, 20302, 19056, 22230, 23607, 20671];
+        
+        // Predicted data for 2024
+        const ridership2024 = [
+            @foreach($predictions as $prediction)
+                {{ $prediction }},
+            @endforeach
+        ];
+
+        // Actual data for 2024 (replace 0 for months with no actual data)
+        const actual2024 = [22653, 23012, 20649, 17329, 17021, 12705, 0, 0, 0, 0, 0, 0];
+
+        const chart = document.getElementById('new1').getContext('2d');
+        const new1 = new Chart(chart, {
+            type: 'line',
+            data: {
+                labels: [
+                    'January', 'February', 'March', 'April', 'May', 'June', 
+                    'July', 'August', 'September', 'October', 'November', 'December'
+                ],
+                datasets: [
+                    {
+                        label: '2023 Actual Ridership',
+                        data: ridership2023,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)', // Blue color
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '2024 Predicted Ridership',
+                        data: ridership2024,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)', // Red color
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '2024 Actual Ridership',
+                        data: actual2024,
+                        backgroundColor: 'rgba(75, 192, 192, 0.7)', // Green color
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        borderDash: [5, 5] // Dashed line for actual data
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        stacked: false
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Ridership Count'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        });
+    </script>
 
     <!-- Daily Ridership -->
     <script>

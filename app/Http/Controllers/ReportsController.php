@@ -338,7 +338,60 @@ class ReportsController extends Controller
             ->orderBy('date')
             ->get();
 
-        return view('admin.reports', compact(
+        // Data for 2023
+        $months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+        $ridership = [20244, 22921, 28282, 18983, 21361, 20723, 15048, 20302, 19056, 22230, 23607, 20671];
+
+        // Perform linear regression
+        $predictor = $this->linearRegression($months, $ridership);
+
+        // Actual 2024 data as per the image
+        $actual2024 = [
+            1 => 22653, // January
+            2 => 23012, // February
+            3 => 20649, // March
+            4 => 17329, // April
+            5 => 17021, // May
+            6 => 12705, // June
+            7 => 0,     // July
+            8 => 0,     // August
+            9 => 0,     // September
+            10 => 0,    // October
+            11 => 0,    // November
+            12 => 0     // December
+        ];
+
+        // Predict ridership for each month in 2024 and calculate errors for months with actual data
+        $predictions = [];
+        $absoluteErrors = [];
+        $squaredErrors = [];
+
+        foreach ($months as $month) {
+            $predicted = round($predictor($month));
+            $predictions[$month] = $predicted;
+
+            // Calculate errors only if we have actual data for 2024
+            if ($actual2024[$month] > 0) {
+                $absoluteErrors[] = abs($actual2024[$month] - $predicted);
+                $squaredErrors[] = pow($actual2024[$month] - $predicted, 2);
+            }
+        }
+
+        // Calculate Mean Absolute Error (MAE) and Mean Squared Error (MSE) for months with actual data
+        $mae = count($absoluteErrors) ? array_sum($absoluteErrors) / count($absoluteErrors) : 0;
+        $mse = count($squaredErrors) ? array_sum($squaredErrors) / count($squaredErrors) : 0;
+
+        // Calculate Mean Absolute Error (MAE) and Mean Squared Error (MSE)
+        $mae = array_sum($absoluteErrors) / count($absoluteErrors);
+        $mse = array_sum($squaredErrors) / count($squaredErrors);
+
+        return view('admin.reports',compact(
+            'predictions',
+            'months',
+            'ridership',
+            'mae',
+            'mse',
+            'actual2024',
             'monthlyData', 
             'ridershipData', 
             'dailyData', 
@@ -359,7 +412,29 @@ class ReportsController extends Controller
             'boats',
             'currentWeekBreakdown',
             'previousWeekBreakdown'
-        ));
+            )
+        );
+    }
+
+    private function linearRegression($x, $y)
+    {
+        $n = count($x);
+        $mean_x = array_sum($x) / $n;
+        $mean_y = array_sum($y) / $n;
+
+        $numerator = $denominator = 0;
+        for ($i = 0; $i < $n; $i++) {
+            $numerator += ($x[$i] - $mean_x) * ($y[$i] - $mean_y);
+            $denominator += pow($x[$i] - $mean_x, 2);
+        }
+
+        $slope = $numerator / $denominator;
+        $intercept = $mean_y - $slope * $mean_x;
+
+        // Return a closure that predicts the ridership based on the month
+        return function($x) use ($slope, $intercept) {
+            return $slope * $x + $intercept;
+        };
     }
 
     // Method to fetch ridership data for a specific year via AJAX

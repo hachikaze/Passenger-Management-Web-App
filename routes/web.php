@@ -27,6 +27,7 @@ Route::middleware(['auth', 'verified', PreventBackHistory::class])->group(functi
 
     // FOR DASHBOARD
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/boats/{boat}/passengers', [DashboardController::class, 'getBoatPassengers'])->name('boats.passengers');
 
     // FOR BOATS
     Route::get('/boats', [BoatController::class, 'index'])->name('boats');

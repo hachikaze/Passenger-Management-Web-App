@@ -132,4 +132,30 @@ class DashboardController extends Controller
             'activeStationsToday'  // Add the active stations to the view
         ));
     }
+
+    public function getBoatPassengers($boatId)
+    {
+        $today = Carbon::today();
+
+        // Retrieve the boat to check occupied seats
+        $boat = Boat::find($boatId);
+
+        // Check if the boat exists and has occupied seats
+        if ($boat && $boat->occupied_seats > 0) {
+            $passengers = Ridership::where('boat_id', $boatId)
+                ->whereDate('created_at', $today)
+                ->whereNull('updated_at') // Exclude passengers who have arrived at their destination
+                ->limit($boat->occupied_seats) // Limit the results to the number of occupied seats
+                ->get([
+                    'first_name', 'middle_name', 'last_name', 
+                    'address', 'contact_number', 'profession', 
+                    'age', 'gender', 'origin', 'destination', 'is_guest'
+                ]);
+
+            return response()->json($passengers);
+        }
+
+        // Return an empty array if occupied seats are 0 or the boat does not exist
+        return response()->json([]);
+    }
 }

@@ -103,7 +103,7 @@
                     @php $currentNumber = 1; @endphp
                     @foreach($boats as $boat)
                         @if($boat->status == 'ACTIVE')
-                            <tr class="hover:bg-gray-100">
+                            <tr class="hover:bg-gray-100 cursor-pointer" onclick="showPassengerDetails({{ $boat->id }}, '{{ $boat->boat_name }}')">
                                 <td class="px-6 py-4 text-sm text-gray-900 border-b">{{ $currentNumber++ }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 border-r border-b">{{ $boat->boat_name }}</td>
                                 <td class="px-6 py-4 text-center text-sm text-gray-900 border-r border-b">{{ $boat->max_capacity }}</td>
@@ -118,54 +118,129 @@
         </div>
     </div>
 
-    <!-- Station Status Table -->
-<div class="my-6 mx-5 p-3 bg-gray-200 shadow-lg rounded">
-    <h1 class="text-xl font-bold pb-4">Station Status</h1>
-    <div class="p-1 bg-white rounded-lg">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-100">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned Station</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Passengers In Station</th>
-                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Incoming Passengers</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @php
-                    $station = Auth::user()->assigned_station;
-                    $today = \Carbon\Carbon::today();
-
-                    // Get all registered (non-cancelled) passengers for the assigned station
-                    $validManifests = \App\Models\PassengerManifest::where('origin', $station)
-                        ->where('status', '!=', 'CANCELLED') // Exclude cancelled passengers
-                        ->pluck('id'); // Get all valid manifest IDs
-
-                    // Passengers still in the station: registered but NOT yet checked in (no ridership entry)
-                    $passengersInStation = \App\Models\PassengerManifest::where('origin', $station)
-                        ->where('status', 'REGISTERED')
-                        ->whereNotIn('id', \App\Models\Ridership::whereIn('ridership_id_key', $validManifests)
-                            ->whereDate('created_at', $today) // Checked in today
-                            ->pluck('ridership_id_key'))
-                        ->count();
-
-                    // Count incoming passengers arriving at this station today, excluding checked-out passengers
-                    $incomingPassengers = \App\Models\Ridership::where('destination', $station)
-                        ->whereDate('created_at', $today) // Arrived today
-                        ->whereNull('updated_at') // Not checked out yet
-                        ->count();
-                @endphp
-                <tr class="hover:bg-gray-100">
-                    <td class="px-6 py-4 text-sm text-gray-900 border-r border-b">{{ $station }}</td>
-                    <td class="px-6 py-4 text-center text-sm text-gray-900 border-r border-b">{{ $passengersInStation }}</td>
-                    <td class="px-6 py-4 text-center text-sm text-gray-900 border-b">{{ $incomingPassengers }}</td>
-                </tr>
-            </tbody>
-        </table>
+    <!-- Modal for Passenger Details -->
+    <div id="passengerDetailsModal" class="fixed z-10 inset-0 flex items-center justify-center overflow-y-auto hidden bg-gray-800 bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-lg w-3/4 max-w-2xl p-4">
+            <h2 class="text-xl font-semibold mb-4">Passenger Details for <span id="boatName"></span></h2>
+            <div id="passengerDetailsContent" class="overflow-y-auto max-h-96"></div>
+            <button onclick="closeModal()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded">Close</button>
+        </div>
+        <div onclick="closeModal()"></div>
     </div>
-</div>
+
+    <!-- Station Status Table -->
+    <div class="my-6 mx-5 p-3 bg-gray-200 shadow-lg rounded">
+        <h1 class="text-xl font-bold pb-4">Station Status</h1>
+        <div class="p-1 bg-white rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned Station</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Passengers In Station</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Incoming Passengers</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @php
+                        $station = Auth::user()->assigned_station;
+                        $today = \Carbon\Carbon::today();
+
+                        // Get all registered (non-cancelled) passengers for the assigned station
+                        $validManifests = \App\Models\PassengerManifest::where('origin', $station)
+                            ->where('status', '!=', 'CANCELLED') // Exclude cancelled passengers
+                            ->pluck('id'); // Get all valid manifest IDs
+
+                        // Passengers still in the station: registered but NOT yet checked in (no ridership entry)
+                        $passengersInStation = \App\Models\PassengerManifest::where('origin', $station)
+                            ->where('status', 'REGISTERED')
+                            ->whereNotIn('id', \App\Models\Ridership::whereIn('ridership_id_key', $validManifests)
+                                ->whereDate('created_at', $today) // Checked in today
+                                ->pluck('ridership_id_key'))
+                            ->count();
+
+                        // Count incoming passengers arriving at this station today, excluding checked-out passengers
+                        $incomingPassengers = \App\Models\Ridership::where('destination', $station)
+                            ->whereDate('created_at', $today) // Arrived today
+                            ->whereNull('updated_at') // Not checked out yet
+                            ->count();
+                    @endphp
+                    <tr class="hover:bg-gray-100">
+                        <td class="px-6 py-4 text-sm text-gray-900 border-r border-b">{{ $station }}</td>
+                        <td class="px-6 py-4 text-center text-sm text-gray-900 border-r border-b">{{ $passengersInStation }}</td>
+                        <td class="px-6 py-4 text-center text-sm text-gray-900 border-b">{{ $incomingPassengers }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <script>
+            // Function to fetch and display passenger details in the modal
+            function showPassengerDetails(boatId, boatName) {
+                // Set the boat name in the modal header
+                document.getElementById('boatName').innerText = boatName;
+
+                // Fetch passengers for the selected boat
+                fetch(`/boats/${boatId}/passengers`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Populate the modal with passenger details in a table format
+                        const passengerContent = document.getElementById('passengerDetailsContent');
+                        passengerContent.innerHTML = '';
+
+                        if (data.length > 0) {
+                            passengerContent.innerHTML = `
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full bg-white border border-gray-300">
+                                        <thead>
+                                            <tr class="bg-gray-100">
+                                                <th class="px-6 py-2 border font-semibold text-left">Name</th>
+                                                <th class="px-4 py-2 border font-semibold text-left">Age</th>
+                                                <th class="px-4 py-2 border font-semibold text-left">Gender</th>
+                                                <th class="px-4 py-2 border font-semibold text-left">Profession</th>
+                                                <th class="px-4 py-2 border font-semibold text-left">Guest</th>
+                                                <th class="px-4 py-2 border font-semibold text-left">Contact</th>
+                                                <th class="px-4 py-2 border font-semibold text-left">Origin</th>
+                                                <th class="px-4 py-2 border font-semibold text-left">Destination</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${data.map(passenger => `
+                                                <tr>
+                                                    <td class="px-6 py-2 border">${passenger.first_name} ${passenger.middle_name} ${passenger.last_name}</td>
+                                                    <td class="px-4 py-2 border">${passenger.age}</td>
+                                                    <td class="px-4 py-2 border">${passenger.gender}</td>
+                                                    <td class="px-4 py-2 border">${passenger.profession}</td>
+                                                    <td class="px-4 py-2 border">${passenger.is_guest ? 'Yes' : 'No'}</td>
+                                                    <td class="px-4 py-2 border">${passenger.contact_number}</td>
+                                                    <td class="px-4 py-2 border">${passenger.origin}</td>
+                                                    <td class="px-4 py-2 border">${passenger.destination}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `;
+                        } else {
+                            passengerContent.innerHTML = '<p class="text-center py-4">No passengers on this boat.</p>';
+                        }
+
+                        // Show modal
+                        document.getElementById('passengerDetailsModal').classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        console.error('Error fetching passenger details:', error);
+                    });
+            }
+
+            // Function to close the modal
+            function closeModal() {
+                document.getElementById('passengerDetailsModal').classList.add('hidden');
+            }
+        </script>
 
         <!-- Gender Breakdown Chart -->
         <script>
