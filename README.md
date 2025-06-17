@@ -47,23 +47,19 @@ The **Pasig River Ferry Passenger Management System** is a web-based application
 ![Login Page](screenshots/login.png)
 
 ### 📊 Dashboard Overview
-![Dashboard](screenshots/dashboard.png)
+![Dashboard](screenshots/dashboard1.png)
+![Dashboard](screenshots/dashboard2.png)
 
 ### 🗺️ Ferry Map Tracking
 ![Map](screenshots/map.png)
 
 ### ⚙️ Boat Configuration Page
-![Boats](screenshots/boats.png)
+![Boats](screenshots/boatconfiguration.png)
 
 ### 📈 Ridership Reports
-![Reports](screenshots/reports.png)
+![Reports](screenshots/report1.png)
+![Reports](screenshots/report2.png)
+![Reports](screenshots/report3.png)
+![Reports](screenshots/report4.png)
 
 ---
-
-## 🚀 Setup Instructions
-
-### Prerequisites
-- PHP 8.3+
-- Composer
-- PostgreSQL
-- Node.js & NPM (for compiling assets)
