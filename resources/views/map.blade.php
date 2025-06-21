@@ -117,7 +117,7 @@
                                 });
                                 console.log(`Marker updated for ${boatName} at position`, position);
                             } else {
-                                // Create a new marker with the dynamic SVG icon
+
                                 const marker = new google.maps.Marker({
                                     position: position,
                                     map: map,
@@ -130,19 +130,17 @@
                                 markers[ferryAideId] = marker;
                                 console.log(`New marker created for ${boatName} at position`, position);
 
-                                // Create a new button with the boat color
-                                createButton(ferryAideId, boatName, boatColor); // Pass boatColor to createButton
+                                createButton(ferryAideId, boatName, boatColor); 
                             }
 
                             newFerryAideIds.push(ferryAideId);
                         });
 
-                        // Remove buttons and markers for ferry aides no longer in the data
                         Object.keys(markers).forEach(existingFerryAideId => {
                             if (!newFerryAideIds.includes(parseInt(existingFerryAideId))) {
-                                markers[existingFerryAideId].setMap(null); // Remove marker from map
-                                delete markers[existingFerryAideId]; // Remove from markers object
-                                removeButton(existingFerryAideId); // Remove the button
+                                markers[existingFerryAideId].setMap(null);
+                                delete markers[existingFerryAideId]; 
+                                removeButton(existingFerryAideId);
                                 console.log(`Removed marker and button for Ferry Aide ID: ${existingFerryAideId}`);
                             }
                         });
@@ -157,27 +155,23 @@
 
         function createButton(ferryAideId, boatName, boatColor) {
             const button = document.createElement('button');
-            button.innerText = `${boatName}`; // Use the boat name here
+            button.innerText = `${boatName}`;
 
-            // Apply TailwindCSS classes and set dynamic background color from boatColor
-            button.className = `text-white text-xs font-bold py-2 px-4 rounded m-2`; // Tailwind classes
-            button.style.backgroundColor = boatColor; // Use the color from boatColors array
-
-            // Add click event listener
+            button.className = `text-white text-xs font-bold py-2 px-4 rounded m-2`;
+            button.style.backgroundColor = boatColor; 
+            
             button.addEventListener('click', () => {
                 const marker = markers[ferryAideId];
                 if (marker) {
                     map.setCenter(marker.getPosition());
-                    map.setZoom(17); // Zoom in to focus on the marker
+                    map.setZoom(17);
                     console.log(`Map centered on ${boatName}`);
                 }
             });
 
-            // Append the button to the container
             document.getElementById('buttonsContainer').appendChild(button);
         }
 
-        // Remove a button for a specific ferry aide
         function removeButton(ferryAideId) {
             const buttonContainer = document.getElementById('buttonsContainer');
             Array.from(buttonContainer.children).forEach(button => {
@@ -187,7 +181,6 @@
             });
         }
 
-        // Load the Google Maps script
         function loadScript(url) {
             var script = document.createElement("script");
             script.type = "text/javascript";
@@ -195,8 +188,7 @@
             document.body.appendChild(script);
         }
 
-        // Add your Google Maps API Key here
-        loadScript('https://maps.googleapis.com/maps/api/js?key=AIzaSyDa8BUEO6XgsEKaaougduKoBBKL-7x1LBQ&callback=initMap');
+        loadScript('');
     </script>
 
 </x-sidebar-layout>
